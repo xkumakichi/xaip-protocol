@@ -14,6 +14,22 @@ export type {
   FundTestnetResult,
 } from "./identity/agent-identity";
 
+// Credentials
+export { AgentCredentials, CREDENTIAL_TYPES } from "./credentials/agent-credentials";
+export type {
+  CredentialConfig,
+  IssuedCredential,
+  CredentialInfo,
+} from "./credentials/agent-credentials";
+
+// Escrow transactions
+export { AgentEscrow } from "./transactions/agent-escrow";
+export type {
+  EscrowConfig,
+  CreateEscrowParams,
+  EscrowResult,
+} from "./transactions/agent-escrow";
+
 // Agent Card builder
 export { createAgentCard } from "./utils/agent-card";
 export type { CreateAgentCardParams } from "./utils/agent-card";
