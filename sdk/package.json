@@ -1,0 +1,34 @@
+{
+  "name": "@xaip/sdk",
+  "version": "0.1.0",
+  "description": "XRPL Agent Identity Protocol SDK - Create, manage, and discover AI agent identities on XRPL",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "demo:create-agent": "ts-node examples/create-agent.ts",
+    "demo:search-agents": "ts-node examples/search-agents.ts"
+  },
+  "keywords": [
+    "xrpl",
+    "xrp",
+    "ai",
+    "agent",
+    "identity",
+    "did",
+    "reputation",
+    "mcp"
+  ],
+  "author": "xkumakichi",
+  "license": "MIT",
+  "dependencies": {
+    "xrpl": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
+  }
+}
