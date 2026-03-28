@@ -1,14 +1,42 @@
 {
-  "name": "@xaip/mcp-server",
+  "name": "xaip-mcp-server",
   "version": "0.1.0",
-  "description": "XAIP MCP Server - Lets any AI agent interact with XRPL Agent Identity Protocol",
+  "description": "XAIP MCP Server - Lets any AI agent interact with XRPL Agent Identity Protocol. Create identities, verify credentials, build trust, transact autonomously.",
   "main": "dist/index.js",
+  "bin": {
+    "xaip-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "prepublishOnly": "npm run build",
     "dev": "ts-node src/index.ts"
   },
-  "keywords": ["xaip", "xrpl", "mcp", "ai-agent", "identity"],
+  "keywords": [
+    "xaip",
+    "xrpl",
+    "xrp",
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "identity",
+    "did",
+    "reputation",
+    "escrow",
+    "credentials",
+    "blockchain",
+    "a2a"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol#readme",
   "author": "xkumakichi",
   "license": "MIT",
   "dependencies": {
