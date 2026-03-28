@@ -36,6 +36,14 @@ export type {
   EscrowResult,
 } from "./transactions/agent-escrow";
 
+// Discovery
+export { AgentRegistry } from "./discovery/agent-registry";
+export type {
+  RegisteredAgent,
+  SearchFilters,
+  SearchResult,
+} from "./discovery/agent-registry";
+
 // Agent Card builder
 export { createAgentCard } from "./utils/agent-card";
 export type { CreateAgentCardParams } from "./utils/agent-card";
