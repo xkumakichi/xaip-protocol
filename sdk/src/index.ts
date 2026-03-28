@@ -22,6 +22,12 @@ export type {
   CredentialInfo,
 } from "./credentials/agent-credentials";
 
+// Reputation
+export { ReputationDataCollector } from "./reputation/data-collector";
+export type { AgentOnChainData } from "./reputation/data-collector";
+export { ReputationScoreCalculator } from "./reputation/score-calculator";
+export type { ScoreBreakdown } from "./reputation/score-calculator";
+
 // Escrow transactions
 export { AgentEscrow } from "./transactions/agent-escrow";
 export type {
