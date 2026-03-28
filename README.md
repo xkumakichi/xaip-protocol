@@ -48,16 +48,105 @@ Layer 0: XRPL         - Native DID, Credentials, Escrow, Payments
 | MCP support | Native | No |
 | Credentials | L1 native | Not included |
 
+## Try It Now
+
+### Create an AI Agent on XRPL Testnet
+
+```bash
+cd sdk && npm install
+npx ts-node examples/create-agent.ts
+```
+
+This will:
+1. Create a funded wallet on XRPL testnet
+2. Build an Agent Card (identity document)
+3. Register the agent's DID on-chain
+4. Verify the DID was stored correctly
+
+### Run the A2A (AI-to-AI) Demo
+
+```bash
+npx ts-node examples/agent-to-agent-job.ts
+```
+
+This simulates a full lifecycle:
+1. Two AI agents are born (DIDs registered)
+2. Worker proves its capability (credential)
+3. Client locks payment (escrow)
+4. Worker completes the job
+5. Client releases payment
+6. Both agents endorse each other
+
+### MCP Server (for AI integration)
+
+The MCP server lets any AI model interact with XAIP:
+
+```bash
+cd mcp-server && npm install && npm run build
+```
+
+Add to your Claude Code config:
+```json
+{
+  "mcpServers": {
+    "xaip": {
+      "command": "node",
+      "args": ["path/to/xaip-protocol/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+Available MCP tools:
+- `xaip_create_test_wallet` - Get a funded testnet wallet
+- `xaip_register_agent` - Register an AI agent DID
+- `xaip_resolve_agent` - Look up an agent's identity
+- `xaip_issue_credential` - Issue capability/endorsement credentials
+- `xaip_accept_credential` - Accept a credential
+- `xaip_create_escrow` - Lock payment for a job
+- `xaip_finish_escrow` - Release payment
+- `xaip_get_account` - Check account balance
+
+## Project Structure
+
+```
+xaip-protocol/
+├── XAIP-SPEC-v0.1.md          # Full protocol specification
+├── schemas/                     # JSON schemas
+│   ├── agent-card.schema.json  # Agent Card schema
+│   └── well-known-xaip.schema.json  # Discovery file schema
+├── sdk/                         # TypeScript SDK
+│   ├── src/
+│   │   ├── identity/           # DID management
+│   │   ├── credentials/        # Credential system
+│   │   ├── transactions/       # Escrow transactions
+│   │   └── utils/              # Agent Card builder, hex utils
+│   └── examples/
+│       ├── create-agent.ts     # Create agent demo
+│       └── agent-to-agent-job.ts  # Full A2A demo
+└── mcp-server/                  # MCP server for AI integration
+    └── src/index.ts
+```
+
 ## Status
 
-**v0.1 - Draft Specification**
+**v0.1 - Working Prototype**
+
+- [x] Protocol specification
+- [x] TypeScript SDK (identity, credentials, escrow)
+- [x] Testnet demos (agent creation, A2A transactions)
+- [x] MCP server
+- [x] JSON schemas (Agent Card, Discovery)
+- [ ] Reputation engine
+- [ ] Agent registry & discovery
+- [ ] x402/MPP integration
 
 See [XAIP-SPEC-v0.1.md](./XAIP-SPEC-v0.1.md) for the full specification.
 
 ## Roadmap
 
-- **Phase 1** (Month 1-2): SDK + MCP Server + Testnet demo
-- **Phase 2** (Month 2-3): Credential system
+- **Phase 1** ~~(Month 1-2)~~: SDK + MCP Server + Testnet demo **DONE**
+- **Phase 2** ~~(Month 2-3)~~: Credential system **DONE**
 - **Phase 3** (Month 3-5): Reputation engine
 - **Phase 4** (Month 5-7): Discovery & Marketplace
 

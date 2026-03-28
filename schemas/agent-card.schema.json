@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xaip.xrpl.org/schemas/agent-card.json",
+  "title": "XAIP Agent Card",
+  "description": "Schema for an AI agent's identity document on XRPL. Stored off-chain (IPFS/HTTPS), referenced by on-chain DID.",
+  "type": "object",
+  "required": ["@context", "id", "type", "version", "agent", "capabilities", "autonomyLevel", "operator", "verificationMethod", "authentication", "metadata"],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "JSON-LD context"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^did:xrpl:1:r[a-zA-Z0-9]+$",
+      "description": "Agent DID"
+    },
+    "type": {
+      "const": "AIAgent"
+    },
+    "version": {
+      "type": "string",
+      "description": "XAIP version (e.g., XAIP/0.1)"
+    },
+    "agent": {
+      "type": "object",
+      "required": ["name", "description", "created", "status"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "model": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "family": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        },
+        "created": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "suspended", "retired"] }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "languages": { "type": "array", "items": { "type": "string" } },
+          "credentialRef": { "type": "string" }
+        }
+      }
+    },
+    "autonomyLevel": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "operator": {
+      "type": "object",
+      "required": ["did", "xrplAddress", "relationship", "authorization"],
+      "properties": {
+        "did": { "type": "string" },
+        "xrplAddress": { "type": "string" },
+        "relationship": { "type": "string", "enum": ["managed", "supervised", "autonomous", "collective"] },
+        "authorization": {
+          "type": "object",
+          "properties": {
+            "maxTransactionXRP": { "type": "number" },
+            "maxDailyXRP": { "type": "number" },
+            "allowedDestinations": { "type": "array", "items": { "type": "string" } },
+            "requiresApproval": { "type": "boolean" },
+            "approvalThresholdXRP": { "type": "number" }
+          }
+        }
+      }
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "mcp": { "type": "string", "format": "uri" },
+        "a2a": { "type": "string", "format": "uri" },
+        "x402": { "type": "string", "format": "uri" },
+        "api": { "type": "string", "format": "uri" }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "properties": {
+        "accept": { "type": "array", "items": { "type": "string" } },
+        "preferredCurrency": { "type": "string" },
+        "escrowRequired": { "type": "boolean" },
+        "escrowRequiredAbove": { "type": "number" }
+      }
+    },
+    "reputation": {
+      "type": "object",
+      "properties": {
+        "registryAddress": { "type": "string" },
+        "currentScore": { "type": ["number", "null"] },
+        "link": { "type": "string", "format": "uri" }
+      }
+    },
+    "verificationMethod": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "controller", "publicKeyHex"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "controller": { "type": "string" },
+          "publicKeyHex": { "type": "string" }
+        }
+      }
+    },
+    "authentication": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["xaipVersion", "lastUpdated"],
+      "properties": {
+        "xaipVersion": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "cardHash": { "type": "string" }
+      }
+    }
+  }
+}

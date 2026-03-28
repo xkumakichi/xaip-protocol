@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xaip.xrpl.org/schemas/well-known-xaip.json",
+  "title": "XAIP Discovery File",
+  "description": "Schema for .well-known/xaip.json - enables AI agents to discover other agents and their capabilities",
+  "type": "object",
+  "required": ["xaipVersion", "chainId", "agents"],
+  "properties": {
+    "xaipVersion": {
+      "type": "string",
+      "description": "XAIP protocol version",
+      "const": "0.1"
+    },
+    "chainId": {
+      "type": "string",
+      "description": "XRPL network identifier",
+      "enum": ["xrpl:mainnet", "xrpl:testnet", "xrpl:devnet"]
+    },
+    "registry": {
+      "type": "string",
+      "description": "XRPL address of the XAIP agent registry"
+    },
+    "documentation": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to XAIP documentation"
+    },
+    "agents": {
+      "type": "array",
+      "description": "List of AI agents available at this endpoint",
+      "items": {
+        "type": "object",
+        "required": ["did", "name", "capabilities", "status"],
+        "properties": {
+          "did": {
+            "type": "string",
+            "description": "Agent's DID (e.g., did:xrpl:1:rAddress)",
+            "pattern": "^did:xrpl:1:r[a-zA-Z0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable agent name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this agent does"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of capability domains (e.g., 'translation', 'code-review')"
+          },
+          "autonomyLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Agent autonomy level (1=manual, 5=full)"
+          },
+          "trustScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Current XAIP trust score"
+          },
+          "pricing": {
+            "type": "object",
+            "description": "Pricing for each capability",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "unit": { "type": "string" },
+                "priceXRP": { "type": "number" },
+                "currency": { "type": "string" }
+              }
+            }
+          },
+          "endpoints": {
+            "type": "object",
+            "properties": {
+              "mcp": { "type": "string", "format": "uri" },
+              "a2a": { "type": "string", "format": "uri" },
+              "x402": { "type": "string", "format": "uri" },
+              "api": { "type": "string", "format": "uri" }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "busy", "offline", "retired"]
+          },
+          "model": {
+            "type": "object",
+            "properties": {
+              "provider": { "type": "string" },
+              "family": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
