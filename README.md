@@ -137,9 +137,12 @@ xaip-protocol/
 - [x] Testnet demos (agent creation, A2A transactions)
 - [x] MCP server
 - [x] JSON schemas (Agent Card, Discovery)
-- [ ] Reputation engine
-- [ ] Agent registry & discovery
+- [x] Reputation engine (5-dimension trust scoring)
+- [x] Agent registry & discovery (search by capability/trust)
+- [x] Full marketplace demo (4 agents, E2E lifecycle)
 - [ ] x402/MPP integration
+- [ ] Persistent registry (on-chain)
+- [ ] Web dashboard
 
 See [XAIP-SPEC-v0.1.md](./XAIP-SPEC-v0.1.md) for the full specification.
 
@@ -147,8 +150,8 @@ See [XAIP-SPEC-v0.1.md](./XAIP-SPEC-v0.1.md) for the full specification.
 
 - **Phase 1** ~~(Month 1-2)~~: SDK + MCP Server + Testnet demo **DONE**
 - **Phase 2** ~~(Month 2-3)~~: Credential system **DONE**
-- **Phase 3** (Month 3-5): Reputation engine
-- **Phase 4** (Month 5-7): Discovery & Marketplace
+- **Phase 3** ~~(Month 3-5)~~: Reputation engine **DONE**
+- **Phase 4** ~~(Month 5-7)~~: Discovery & Marketplace **DONE**
 
 ## License
 
