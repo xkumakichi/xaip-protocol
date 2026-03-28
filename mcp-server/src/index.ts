@@ -346,6 +346,133 @@ server.tool(
   }
 );
 
+// --- Reputation ---
+
+server.tool(
+  "xaip_get_reputation",
+  "Get an agent's trust score computed from on-chain evidence. Returns a 0-100 composite score with 5 dimensions.",
+  {
+    address: z.string().describe("XRPL address of the agent to evaluate"),
+  },
+  async ({ address }) => {
+    const c = await getClient();
+
+    // Collect on-chain data
+    const [accountInfo, didInfo, txResponse] = await Promise.all([
+      c.request({
+        command: "account_info",
+        account: address,
+        ledger_index: "validated",
+      }).catch(() => null),
+      c.request({
+        command: "ledger_entry",
+        did: address,
+      } as any).catch(() => null),
+      c.request({
+        command: "account_tx",
+        account: address,
+        ledger_index_min: -1,
+        ledger_index_max: -1,
+        limit: 200,
+      } as any).catch(() => null),
+    ]);
+
+    if (!accountInfo) {
+      return { content: [{ type: "text", text: "Account not found." }] };
+    }
+
+    const transactions = (txResponse?.result as any)?.transactions || [];
+
+    // Analyze transactions
+    let escrowsFinished = 0, escrowsCancelled = 0;
+    let paymentsReceived = 0, paymentsSent = 0;
+    let endorsementsReceived = 0;
+    const capabilities: string[] = [];
+    const rippleEpochOffset = 946684800;
+    let earliest = Infinity, latest = 0;
+    const uniqueDays = new Set<string>();
+
+    for (const txEntry of transactions) {
+      const tx = txEntry.tx_json || txEntry.tx || {};
+      const type = tx.TransactionType;
+
+      // Transaction analysis
+      if (type === "EscrowFinish") escrowsFinished++;
+      if (type === "EscrowCancel") escrowsCancelled++;
+      if (type === "Payment" && tx.Account === address) paymentsSent++;
+      if (type === "Payment" && tx.Destination === address) paymentsReceived++;
+      if (type === "CredentialCreate" && tx.Subject === address) {
+        try {
+          const credType = tx.CredentialType
+            ? Buffer.from(tx.CredentialType, "hex").toString("utf-8") : "";
+          if (credType.includes("Endorsement")) endorsementsReceived++;
+          if (credType.includes("Capability")) {
+            const cap = credType.replace("XAIP:Capability:", "");
+            if (cap && !capabilities.includes(cap)) capabilities.push(cap);
+          }
+        } catch {}
+      }
+
+      // Activity tracking
+      const closeTime = txEntry.close_time_iso || txEntry.date;
+      let ts: number | null = null;
+      if (typeof closeTime === "string") ts = new Date(closeTime).getTime() / 1000;
+      else if (typeof tx.date === "number") ts = tx.date + rippleEpochOffset;
+      if (ts) {
+        if (ts < earliest) earliest = ts;
+        if (ts > latest) latest = ts;
+        uniqueDays.add(new Date(ts * 1000).toISOString().split("T")[0]);
+      }
+    }
+
+    // Calculate scores
+    const totalEscrows = escrowsFinished + escrowsCancelled;
+    const reliability = totalEscrows > 0 ? Math.round((escrowsFinished / totalEscrows) * 100) : (transactions.length > 0 ? 50 : 0);
+    const interactionCount = escrowsFinished + paymentsReceived;
+    const endorseRate = interactionCount > 0 ? Math.min(1, endorsementsReceived / interactionCount) : 0;
+    const quality = Math.min(100, Math.round(endorseRate * 80 + Math.min(20, capabilities.length * 10)));
+    const totalDays = earliest !== Infinity && latest > 0 ? Math.max(1, (latest - earliest) / 86400) : 1;
+    const consistency = uniqueDays.size > 1 ? Math.min(100, Math.round((uniqueDays.size / totalDays) * 200)) : 0;
+    const volume = transactions.length > 0 ? Math.min(100, Math.round(Math.log10(transactions.length) * 20)) : 0;
+    const daysActive = earliest !== Infinity ? (Date.now() / 1000 - earliest) / 86400 : 0;
+    const longevity = Math.min(100, Math.round((daysActive / 365) * 100));
+
+    const overall = Math.round(0.30 * reliability + 0.25 * quality + 0.20 * consistency + 0.15 * volume + 0.10 * longevity);
+
+    // DID info
+    const didNode = (didInfo?.result as any)?.node;
+    const isXAIP = didNode?.Data ? Buffer.from(didNode.Data, "hex").toString("utf-8").startsWith("XAIP/") : false;
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          address,
+          did: didNode ? `did:xrpl:1:${address}` : null,
+          isXAIPAgent: isXAIP,
+          trustScore: {
+            overall,
+            reliability,
+            quality,
+            consistency,
+            volume,
+            longevity,
+          },
+          stats: {
+            totalTransactions: transactions.length,
+            escrowsCompleted: escrowsFinished,
+            escrowsCancelled,
+            endorsementsReceived,
+            capabilities,
+            activeDays: uniqueDays.size,
+          },
+          verdict: overall >= 80 ? "Highly trusted" : overall >= 60 ? "Trusted" : overall >= 40 ? "Building trust" : overall >= 20 ? "New agent" : "Unverified",
+        }, null, 2),
+      }],
+    };
+  }
+);
+
 // --- Account Info ---
 
 server.tool(
