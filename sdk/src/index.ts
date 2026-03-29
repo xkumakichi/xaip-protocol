@@ -44,6 +44,24 @@ export type {
   SearchResult,
 } from "./discovery/agent-registry";
 
+// Memory Chain
+export { MemoryChain } from "./memory/memory-chain";
+export type {
+  MemoryRecord,
+  RelationshipType,
+  RelationshipSummary,
+  BondStatus,
+  MemoryChainConfig,
+} from "./memory/memory-chain";
+
+// Agent Guild
+export { AgentGuild } from "./guild/agent-guild";
+export type {
+  GuildMember,
+  GuildProfile,
+  GuildConfig,
+} from "./guild/agent-guild";
+
 // Agent Card builder
 export { createAgentCard } from "./utils/agent-card";
 export type { CreateAgentCardParams } from "./utils/agent-card";
