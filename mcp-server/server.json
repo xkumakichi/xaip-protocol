@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.xkumakichi/xaip-mcp-server",
+  "description": "AI agents get on-chain identity, credentials, reputation, escrow, and persistent memory on XRPL.",
+  "version": "0.1.1",
+  "license": "MIT",
+  "homepage": "https://github.com/xkumakichi/xaip-protocol",
+  "repository": {
+    "url": "https://github.com/xkumakichi/xaip-protocol.git",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "xaip-mcp-server",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
