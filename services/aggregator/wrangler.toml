@@ -1,0 +1,13 @@
+name = "xaip-aggregator"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+workers_dev = true
+
+[vars]
+NODE_ID = "xaip-aggregator-1"
+XAIP_VERSION = "0.4.0"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "xaip-receipts"
+database_id = "c89bdaad-21e1-4f48-9c95-5b15a7a4a799"

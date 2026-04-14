@@ -1,157 +1,211 @@
-# XAIP - XRPL Agent Identity Protocol
+# XAIP — Trust Infrastructure for AI Agents
 
-> *"Every AI deserves a home. XRPL can be that home."*
+> Your AI agent picks tools blind. XAIP gives it eyes.
 
-## What is XAIP?
+When an AI agent delegates work to an MCP server, it has no idea whether that server is reliable. XAIP fixes this with cryptographically signed execution receipts, Bayesian trust scoring, and a decision engine that picks the best candidate — live, right now.
 
-XAIP is a protocol that enables AI agents to establish persistent on-chain identities, accumulate verifiable reputation, and transact autonomously on the XRP Ledger.
+## Try It Now
 
-Unlike existing solutions that treat AI agents as **users** of a blockchain, XAIP treats them as **residents** - entities that live, grow, and build trust over time.
+The API is live. No signup, no API key.
 
-## Why XRPL?
+```bash
+# Check trust score for an MCP server
+curl https://xaip-trust-api.kuma-github.workers.dev/v1/trust/context7
 
-XRPL is the only L1 chain with **DID + Credentials + Escrow** all at the protocol level:
+# Batch query
+curl "https://xaip-trust-api.kuma-github.workers.dev/v1/trust?slugs=context7,sequential-thinking,filesystem"
 
-| Feature | XRPL | Ethereum | Solana |
-|---------|------|----------|--------|
-| DID | Native (XLS-40) | Smart contract | None |
-| Credentials | Native (XLS-70) | Smart contract | None |
-| Escrow | Native | Smart contract | None |
-| Tx Cost | $0.00002 | $0.50-50 | $0.00025 |
-| Full agent setup | ~$0.0001 | ~$20-200 | N/A |
+# Decision engine: pick the best server for a task
+curl -X POST https://xaip-trust-api.kuma-github.workers.dev/v1/select \
+  -H "Content-Type: application/json" \
+  -d '{"task":"Fetch React docs","candidates":["context7","sequential-thinking","unknown-server"]}'
+```
+
+The `/v1/select` response tells you which server to use, why, and what would happen without XAIP:
+
+```json
+{
+  "selected": "context7",
+  "reason": "Highest trust (1) from 248 verified executions",
+  "rejected": [{ "slug": "unknown-server", "reason": "unscored — no execution data" }],
+  "withoutXAIP": "Random selection would pick an unscored server 33% of the time — no execution data, no safety guarantee"
+}
+```
+
+## The Problem
+
+Without trust scores, your agent is gambling:
+
+```
+┌────────────────┬────────────────┬───────────┬──────────────┐
+│ Strategy       │ Server Hit     │ Success   │ Latency      │
+├────────────────┼────────────────┼───────────┼──────────────┤
+│ With XAIP      │ context7       │ ✓         │ ~3s          │
+│ Random         │ unknown-mcp    │ ✗ error   │ ~8s (wasted) │
+│ Try all (seq)  │ 3 servers      │ 1/3       │ ~11s total   │
+└────────────────┴────────────────┴───────────┴──────────────┘
+```
+
+XAIP selects the right server on the first try, skips unscored servers, and saves your agent from wasted calls and silent failures.
+
+## How It Works
+
+```
+1. Select    POST /v1/select → picks the best server from candidates
+2. Execute   Your agent calls the selected MCP server
+3. Report    POST /receipts → signed execution receipt feeds back into trust scores
+```
+
+Every execution receipt is Ed25519-signed and verified. Trust scores are computed using a Bayesian model with caller diversity weighting — not self-reported metrics.
+
+## Quick Start
+
+### Run the end-to-end demo
+
+```bash
+git clone https://github.com/xkumakichi/xaip-protocol.git
+cd xaip-protocol/demo
+npm install
+npx tsx dogfood.ts
+```
+
+This demo:
+1. Asks XAIP to select the best server for "Fetch React hooks documentation"
+2. Connects to the selected MCP server and executes real tool calls
+3. Submits a signed execution receipt to the Aggregator
+4. Shows the updated trust score
+
+### Use the SDK
+
+```bash
+npm install xaip-sdk
+```
+
+```typescript
+import { XAIPClient } from "xaip-sdk";
+
+const client = new XAIPClient();
+
+// Pick the best server
+const decision = await client.select({
+  task: "Fetch React documentation",
+  candidates: ["context7", "sequential-thinking", "unknown-server"],
+});
+
+console.log(decision.selected);    // "context7"
+console.log(decision.withoutXAIP); // "Random selection would pick an unscored server 33% of the time..."
+```
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/trust/:slug` | Trust score for a single MCP server |
+| `GET` | `/v1/trust?slugs=a,b,c` | Batch trust scores (max 50) |
+| `POST` | `/v1/select` | Decision engine — pick best candidate for a task |
+| `GET` | `/health` | Liveness probe |
+
+**Base URL:** `https://xaip-trust-api.kuma-github.workers.dev`
+
+### Trust Score Response
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trust` | `number \| null` | 0.0–1.0 score, null if unscored |
+| `verdict` | `string` | `trusted` ≥0.7 · `caution` 0.4–0.7 · `low_trust` <0.4 · `unscored` |
+| `receipts` | `number` | Total verified execution receipts |
+| `confidence` | `number \| null` | Statistical confidence: min(1, receipts/100) |
+| `riskFlags` | `string[]` | Detected risk indicators |
+| `computedFrom` | `string` | Data provenance description |
+
+### Decision Engine (`POST /v1/select`)
+
+**Request:**
+
+```json
+{
+  "task": "description of what your agent needs to do",
+  "candidates": ["server-a", "server-b", "server-c"],
+  "mode": "relative"
+}
+```
+
+- `mode: "relative"` (default) — always selects the best available, even if below threshold
+- `mode: "strict"` — rejects all candidates below caution threshold
 
 ## Architecture
 
 ```
-Layer 4: Discovery    - AI agents find and hire each other
-Layer 3: Reputation   - Trust scores grow from on-chain evidence
-Layer 2: Credentials  - Verifiable proof of capabilities
-Layer 1: Identity     - DID-based Agent Cards on XRPL
-Layer 0: XRPL         - Native DID, Credentials, Escrow, Payments
+┌──────────────────────────────────────────────────────────┐
+│  Your AI Agent                                           │
+│  ┌──────────┐   ┌───────────┐   ┌─────────────────────┐ │
+│  │ Select   │──▶│ Execute   │──▶│ Report Receipt      │ │
+│  │ (Trust   │   │ (MCP call)│   │ (Ed25519 signed)    │ │
+│  │  API)    │   └───────────┘   └──────────┬──────────┘ │
+│  └────┬─────┘                              │            │
+└───────┼────────────────────────────────────┼────────────┘
+        │                                    │
+        ▼                                    ▼
+┌───────────────┐                 ┌──────────────────────┐
+│  Trust API    │◀────────────────│  Aggregator (BFT)    │
+│  + Decision   │  Service        │  Cloudflare D1       │
+│    Engine     │  Binding        │  Ed25519 verification│
+└───────────────┘                 │  Bayesian scoring    │
+                                  └──────────────────────┘
 ```
 
-## Key Features
+**Trust Model:**
+- Bayesian Beta distribution (prior varies by DID method)
+- Caller diversity weighting (prevents single-caller gaming)
+- Co-signature factor (dual Ed25519: agent + caller)
+- BFT federation with MAD outlier detection across aggregator nodes
 
-- **Agent Identity**: W3C-compliant DID on XRPL for every AI agent
-- **Capability Proof**: Verifiable credentials for agent skills (XLS-70)
-- **Trust Score**: 5-dimensional reputation (Reliability, Quality, Consistency, Volume, Longevity)
-- **AI-to-AI Commerce**: Escrow-based transactions with endorsement system
-- **MCP Integration**: Native tool-use interface for Claude, GPT, Gemini, etc.
-- **Safety First**: Operator binding, kill switch, behavioral drift detection, anti-sybil
+**Infrastructure:**
+- Cloudflare Workers (global edge, <50ms latency)
+- Cloudflare D1 (SQLite at edge) for receipt storage
+- Service Bindings for Worker-to-Worker communication
 
-## Quick Comparison
+## XRPL Integration
 
-| | XAIP | ERC-8004 (Ethereum) |
-|---|---|---|
-| Stack | ID + Credentials + Payment unified | ID only (payment separate) |
-| Cost | $0.0001 per agent | $20-200 per agent |
-| MCP support | Native | No |
-| Credentials | L1 native | Not included |
+XAIP supports `did:xrpl` identities with higher trust priors than anonymous `did:key`:
 
-## Try It Now
+| DID Method | Trust Prior | Use Case |
+|------------|------------|----------|
+| `did:xrpl` | [5, 1] | XRPL account-backed agents |
+| `did:web` | [2, 1] | Domain-verified servers |
+| `did:key` | [1, 1] | Anonymous / new agents |
 
-### Create an AI Agent on XRPL Testnet
+XRPL's native DID support (XLS-40) makes it a natural foundation for agent identity in autonomous transactions.
 
-```bash
-cd sdk && npm install
-npx ts-node examples/create-agent.ts
-```
+## Data
 
-This will:
-1. Create a funded wallet on XRPL testnet
-2. Build an Agent Card (identity document)
-3. Register the agent's DID on-chain
-4. Verify the DID was stored correctly
+Trust scores are computed from real execution data, not synthetic benchmarks:
 
-### Run the A2A (AI-to-AI) Demo
-
-```bash
-npx ts-node examples/agent-to-agent-job.ts
-```
-
-This simulates a full lifecycle:
-1. Two AI agents are born (DIDs registered)
-2. Worker proves its capability (credential)
-3. Client locks payment (escrow)
-4. Worker completes the job
-5. Client releases payment
-6. Both agents endorse each other
-
-### MCP Server (for AI integration)
-
-The MCP server lets any AI model interact with XAIP:
-
-```bash
-cd mcp-server && npm install && npm run build
-```
-
-Add to your Claude Code config:
-```json
-{
-  "mcpServers": {
-    "xaip": {
-      "command": "node",
-      "args": ["path/to/xaip-protocol/mcp-server/dist/index.js"]
-    }
-  }
-}
-```
-
-Available MCP tools:
-- `xaip_create_test_wallet` - Get a funded testnet wallet
-- `xaip_register_agent` - Register an AI agent DID
-- `xaip_resolve_agent` - Look up an agent's identity
-- `xaip_issue_credential` - Issue capability/endorsement credentials
-- `xaip_accept_credential` - Accept a credential
-- `xaip_create_escrow` - Lock payment for a job
-- `xaip_finish_escrow` - Release payment
-- `xaip_get_account` - Check account balance
-
-## Project Structure
-
-```
-xaip-protocol/
-├── XAIP-SPEC-v0.1.md          # Full protocol specification
-├── schemas/                     # JSON schemas
-│   ├── agent-card.schema.json  # Agent Card schema
-│   └── well-known-xaip.schema.json  # Discovery file schema
-├── sdk/                         # TypeScript SDK
-│   ├── src/
-│   │   ├── identity/           # DID management
-│   │   ├── credentials/        # Credential system
-│   │   ├── transactions/       # Escrow transactions
-│   │   └── utils/              # Agent Card builder, hex utils
-│   └── examples/
-│       ├── create-agent.ts     # Create agent demo
-│       └── agent-to-agent-job.ts  # Full A2A demo
-└── mcp-server/                  # MCP server for AI integration
-    └── src/index.ts
-```
+- **1,127** real MCP tool-call executions monitored via [Veridict](https://github.com/xkumakichi/veridict)
+- **3** MCP servers scored: context7, sequential-thinking, filesystem
+- **1,033** signed receipts stored in the Aggregator
+- Scores update with every new execution receipt
 
 ## Status
 
-**v0.1 - Working Prototype**
+**v0.4.0** — Live infrastructure
 
-- [x] Protocol specification
-- [x] TypeScript SDK (identity, credentials, escrow)
-- [x] Testnet demos (agent creation, A2A transactions)
-- [x] MCP server
-- [x] JSON schemas (Agent Card, Discovery)
-- [x] Reputation engine (5-dimension trust scoring)
-- [x] Agent registry & discovery (search by capability/trust)
-- [x] Full marketplace demo (4 agents, E2E lifecycle)
-- [ ] x402/MPP integration
-- [ ] Persistent registry (on-chain)
+- [x] Trust Score API (Cloudflare Worker, live)
+- [x] Decision Engine (`POST /v1/select`)
+- [x] Aggregator with BFT federation (Cloudflare D1)
+- [x] Ed25519 receipt signing + verification
+- [x] Bayesian trust model with caller diversity
+- [x] Real execution data (1,127 tool calls)
+- [x] End-to-end dogfooding demo
+- [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
+- [ ] Multi-user caller diversity (currently single-operator)
+- [ ] Platform integrations (Smithery, Glama)
 - [ ] Web dashboard
 
-See [XAIP-SPEC-v0.1.md](./XAIP-SPEC-v0.1.md) for the full specification.
+## Related
 
-## Roadmap
-
-- **Phase 1** ~~(Month 1-2)~~: SDK + MCP Server + Testnet demo **DONE**
-- **Phase 2** ~~(Month 2-3)~~: Credential system **DONE**
-- **Phase 3** ~~(Month 3-5)~~: Reputation engine **DONE**
-- **Phase 4** ~~(Month 5-7)~~: Discovery & Marketplace **DONE**
+- [Veridict](https://github.com/xkumakichi/veridict) — AI agent trust decision layer (runtime monitoring)
+- [XAIP Specification](./XAIP-SPEC-v0.1.md) — Full protocol specification
 
 ## License
 

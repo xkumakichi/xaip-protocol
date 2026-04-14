@@ -46,6 +46,7 @@
     "@types/sql.js": "^1.4.11",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.0"
   },
   "engines": {
