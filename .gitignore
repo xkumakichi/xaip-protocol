@@ -10,3 +10,18 @@ coverage/
 .vscode/
 *.secret
 .mcpregistry_*
+
+# Demo
+demo/node_modules/
+demo-receipts.db
+results.js
+fed-agg-*.db
+
+# Secrets
+scripts/claude-identity.json
+
+# Tools (local binaries & tokens)
+tools/mcp-publisher.exe
+tools/mcp-publisher.tar.gz
+tools/.mcp_publisher_token
+tools/awesome-mcp-servers/

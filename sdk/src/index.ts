@@ -1,99 +1,61 @@
 /**
- * XAIP SDK - XRPL Agent Identity Protocol
+ * XAIP SDK v0.3.1 — Chain-agnostic trust protocol for AI agents.
  *
- * "Every AI deserves a home. XRPL can be that home."
- *
- * @packageDocumentation
+ * Usage:
+ *   import { withXAIP } from "xaip-sdk";
+ *   await withXAIP(server, { did: "did:web:myagent.com" });
  */
 
-// Core identity
-export { AgentIdentity } from "./identity/agent-identity";
-export type {
-  AgentIdentityConfig,
-  CreateAgentResult,
-  FundTestnetResult,
-} from "./identity/agent-identity";
+// Middleware (primary API)
+export { withXAIP } from "./middleware";
 
-// Credentials
-export { AgentCredentials, CREDENTIAL_TYPES } from "./credentials/agent-credentials";
-export type {
-  CredentialConfig,
-  IssuedCredential,
-  CredentialInfo,
-} from "./credentials/agent-credentials";
+// Identity
+export { parseDID, generateDIDKey, createSigningDelegate, verify, hash } from "./identity";
 
-// Reputation
-export { ReputationDataCollector } from "./reputation/data-collector";
-export type { AgentOnChainData } from "./reputation/data-collector";
-export { ReputationScoreCalculator } from "./reputation/score-calculator";
-export type { ScoreBreakdown } from "./reputation/score-calculator";
+// Score
+export { computeQueryResult } from "./score";
 
-// Escrow transactions
-export { AgentEscrow } from "./transactions/agent-escrow";
-export type {
-  EscrowConfig,
-  CreateEscrowParams,
-  EscrowResult,
-} from "./transactions/agent-escrow";
+// Store
+export { ReceiptStore } from "./store";
+export type { StoredReceipt } from "./store";
 
-// Discovery
-export { AgentRegistry } from "./discovery/agent-registry";
-export type {
-  RegisteredAgent,
-  SearchFilters,
-  SearchResult,
-} from "./discovery/agent-registry";
+// Aggregator (federation)
+export { AggregatorClient, createAggregatorServer } from "./aggregator";
+export type { AggregatorServerOptions } from "./aggregator";
 
-// Memory Chain
-export { MemoryChain } from "./memory/memory-chain";
-export type {
-  MemoryRecord,
-  RelationshipType,
-  RelationshipSummary,
-  BondStatus,
-  MemoryChainConfig,
-} from "./memory/memory-chain";
-
-// Agent Guild
-export { AgentGuild } from "./guild/agent-guild";
-export type {
-  GuildMember,
-  GuildProfile,
-  GuildConfig,
-} from "./guild/agent-guild";
-
-// Agent Card builder
-export { createAgentCard } from "./utils/agent-card";
-export type { CreateAgentCardParams } from "./utils/agent-card";
-
-// Hex utilities
-export { stringToHex, hexToString, isValidHex } from "./utils/hex";
+// OpenTelemetry
+export { XAIPOtelExporter, otelPlugin } from "./otel";
+export type { OtelExporterConfig } from "./otel";
 
 // Types
 export type {
-  AgentCard,
-  AgentCapability,
-  AgentEndpoints,
-  AgentOperator,
-  AgentPaymentConfig,
-  AgentModel,
-  AgentType,
-  AgentStatus,
-  AutonomyLevel,
-  ReputationScore,
-  ReputationWeights,
-  CredentialType,
-  CapabilityCredential,
-  EndorsementCredential,
-  XRPLNetwork,
-  OperatorAuthorization,
+  DIDMethod,
+  ParsedDID,
+  SigningDelegate,
+  FailureType,
+  ExecutionReceipt,
+  CapabilityScore,
+  TrustScore,
+  QueryResult,
+  PrivacyLevel,
+  XAIPConfig,
+  XAIPPlugin,
+  XAIPContext,
+  AggregatorPushPayload,
+  AggregatorQueryRequest,
+  AggregatorQueryResponse,
+  RateLimitConfig,
 } from "./types";
 
-// Constants
 export {
+  IDENTITY_PRIORS,
+  DEFAULT_RATE_LIMITS,
   XAIP_VERSION,
   XAIP_PROTOCOL_ID,
-  XAIP_PROTOCOL_ID_HEX,
-  XRPL_NETWORKS,
-  DEFAULT_REPUTATION_WEIGHTS,
 } from "./types";
+
+// Plugins
+export { veridictPlugin } from "./plugins/veridict";
+export type { VeridictPluginConfig } from "./plugins/veridict";
+export { xrplPlugin, resolveXRPLDID } from "./plugins/xrpl";
+export type { XRPLPluginConfig } from "./plugins/xrpl";

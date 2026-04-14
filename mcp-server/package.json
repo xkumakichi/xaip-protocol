@@ -42,6 +42,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
+    "veridict": "^0.1.0",
     "xrpl": "^4.2.0"
   },
   "devDependencies": {

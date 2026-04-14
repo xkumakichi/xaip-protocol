@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XAIP Protocol — Trust Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="results.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --red:      #f85149;
+      --blue:     #58a6ff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 24px 16px 48px;
+    }
+
+    header { text-align: center; margin-bottom: 40px; }
+    header h1 {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--blue); }
+    header p { color: var(--muted); margin-top: 6px; font-size: 13px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card.wide { grid-column: 1 / -1; }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .hero-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .hero-block { text-align: center; }
+    .hero-num { font-size: clamp(48px, 8vw, 80px); font-weight: 800; line-height: 1; }
+    .hero-num.bad  { color: var(--red); }
+    .hero-num.good { color: var(--green); }
+    .hero-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .hero-arrow { font-size: 36px; color: var(--muted); }
+    .improvement-badge {
+      display: block;
+      width: fit-content;
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-weight: 700;
+      font-size: 16px;
+      margin: 0 auto 16px;
+    }
+
+    .agent-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .agent-card {
+      flex: 1;
+      border-radius: 8px;
+      padding: 14px;
+      border: 2px solid transparent;
+    }
+    .agent-card.selected { border-color: var(--green); background: rgba(63,185,80,0.08); }
+    .agent-card.rejected { border-color: var(--red);   background: rgba(248,81,73,0.08); }
+    .agent-name  { font-weight: 600; margin-bottom: 4px; }
+    .agent-trust { font-size: 28px; font-weight: 700; }
+    .agent-trust.high { color: var(--green); }
+    .agent-trust.low  { color: var(--red); }
+
+    .verdict-badge {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .verdict-badge.yes     { background: rgba(63,185,80,0.2);  color: var(--green); }
+    .verdict-badge.caution { background: rgba(210,153,34,0.2); color: var(--yellow); }
+    .verdict-badge.unknown { background: rgba(139,148,158,0.2); color: var(--muted); }
+
+    .status-pill {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .status-pill.selected { background: rgba(63,185,80,0.2); color: var(--green); }
+    .status-pill.rejected { background: rgba(248,81,73,0.2);  color: var(--red); }
+
+    .flag-timeline { list-style: none; }
+    .flag-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .flag-item:last-child { border-bottom: none; }
+    .flag-phase { flex-shrink: 0; width: 60px; font-size: 11px; color: var(--muted); padding-top: 1px; }
+    .flag-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
+    .flag-tag {
+      background: rgba(210,153,34,0.15);
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+    }
+    .flag-none { color: var(--muted); font-size: 12px; }
+
+    .sybil-row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .sybil-stat {
+      flex: 1; min-width: 120px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .sybil-stat .value { font-size: 28px; font-weight: 700; }
+    .sybil-stat .value.danger { color: var(--red); }
+    .sybil-stat .value.safe   { color: var(--green); }
+    .sybil-stat .slabel { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .chart-wrap { position: relative; }
+    .chart-wrap canvas { width: 100% !important; }
+
+    .no-data { text-align: center; padding: 40px; color: var(--muted); }
+    .no-data code {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>XAIP Protocol — <span>Trust Dashboard</span></h1>
+  <p>v0.3.1 · Proof-of-Concept Demo Results</p>
+</header>
+
+<div id="root">
+  <div class="no-data">
+    <p>Run the demo first to generate data:</p>
+    <code>cd demo &amp;&amp; npm start</code>
+  </div>
+</div>
+
+<script>
+(function () {
+  var data = window.XAIP_RESULTS;
+  if (!data) return;
+
+  // Safe text helper — prevents XSS from any string value in results.js
+  function esc(str) {
+    var d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
+
+  function el(tag, cls) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
+
+  function txt(tag, cls, text) {
+    var e = el(tag, cls);
+    e.textContent = text;
+    return e;
+  }
+
+  function verdictClass(v) {
+    if (v === 'yes') return 'yes';
+    if (v === 'caution') return 'caution';
+    return 'unknown';
+  }
+
+  var COLORS = {
+    green:  '#3fb950',
+    yellow: '#d29922',
+    red:    '#f85149',
+    blue:   '#58a6ff',
+    muted:  '#8b949e',
+    border: '#30363d',
+  };
+
+  Chart.defaults.color = '#8b949e';
+  Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  Chart.defaults.font.size = 12;
+
+  var root = document.getElementById('root');
+  root.textContent = '';
+
+  var grid = el('div', 'grid');
+  root.appendChild(grid);
+
+  function card(title, wide) {
+    var c = el('div', 'card' + (wide ? ' wide' : ''));
+    c.appendChild(txt('div', 'card-title', title));
+    grid.appendChild(c);
+    return c;
+  }
+
+  function chartWrap(height) {
+    var w = el('div', 'chart-wrap');
+    w.style.height = height + 'px';
+    var canvas = el('canvas');
+    w.appendChild(canvas);
+    return { wrap: w, canvas: canvas };
+  }
+
+  // ── 1. With vs Without XAIP (hero) ──────────────────────────
+
+  (function () {
+    var c = card('With vs Without XAIP', true);
+    var cmp = data.comparison;
+    var without  = cmp.withoutXAIP.pct;
+    var withXaip = cmp.withXAIP.execPct;
+    var imp      = cmp.improvement;
+
+    var heroRow = el('div', 'hero-row');
+
+    var blockL = el('div', 'hero-block');
+    blockL.appendChild(txt('div', 'hero-num bad',  without  + '%'));
+    var ll = el('div', 'hero-label'); ll.textContent = 'Without XAIP\nRandom selection'; blockL.appendChild(ll);
+
+    var arrow = el('div', 'hero-arrow'); arrow.textContent = '→';
+
+    var blockR = el('div', 'hero-block');
+    blockR.appendChild(txt('div', 'hero-num good', withXaip + '%'));
+    var rl = el('div', 'hero-label'); rl.textContent = 'With XAIP\nTrust-based selection'; blockR.appendChild(rl);
+
+    heroRow.appendChild(blockL);
+    heroRow.appendChild(arrow);
+    heroRow.appendChild(blockR);
+    c.appendChild(heroRow);
+
+    if (imp > 0) {
+      var badge = el('div', 'improvement-badge');
+      badge.textContent = '+' + imp + '% improvement';
+      c.appendChild(badge);
+    }
+
+    var cw = chartWrap(120);
+    c.appendChild(cw.wrap);
+
+    new Chart(cw.canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Without XAIP (random)', 'With XAIP (trust-based)'],
+        datasets: [{
+          data: [without, withXaip],
+          backgroundColor: [COLORS.red + '66', COLORS.green + '66'],
+          borderColor:     [COLORS.red, COLORS.green],
+          borderWidth: 2,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 0, max: 100, grid: { color: COLORS.border }, ticks: { callback: function(v) { return v + '%'; } } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }());
+
+  // ── 2. Trust Timeline ────────────────────────────────────────
+
+  (function () {
+    var c = card('Trust Timeline — Agent B (Phase 0 → 4)', false);
+    var phases = data.phases;
+
+    function verdictColor(v) {
+      if (v === 'yes') return COLORS.green;
+      if (v === 'caution') return COLORS.yellow;
+      return COLORS.muted;
+    }
+
+    var labels      = phases.map(function(p) { return 'Ph' + p.phase; });
+    var trustVals   = phases.map(function(p) { return +(p.trust * 100).toFixed(1); });
+    var pointColors = phases.map(function(p) { return verdictColor(p.verdict); });
+
+    var cw = chartWrap(200);
+    c.appendChild(cw.wrap);
+
+    new Chart(cw.canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Trust Score (%)',
+          data: trustVals,
+          borderColor: COLORS.blue,
+          backgroundColor: COLORS.blue + '22',
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+          pointRadius: 8,
+          pointHoverRadius: 10,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(ctx) { return phases[ctx[0].dataIndex].label; },
+              label: function(ctx) {
+                var p = phases[ctx.dataIndex];
+                var lines = [
+                  'Trust: ' + ctx.raw + '%',
+                  'Verdict: ' + p.verdict,
+                  'Receipts: ' + p.receipts,
+                ];
+                if (p.riskFlags.length) lines.push('Flags: ' + p.riskFlags.join(', '));
+                return lines;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { min: 0, max: 100, grid: { color: COLORS.border }, ticks: { callback: function(v) { return v + '%'; } } },
+          x: { grid: { color: COLORS.border } }
+        }
+      }
+    });
+
+    // Color legend
+    var legend = el('div');
+    legend.style.cssText = 'display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;';
+    [['yes', COLORS.green], ['caution', COLORS.yellow], ['unknown', COLORS.muted]].forEach(function(pair) {
+      var d = el('div');
+      d.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;color:' + pair[1];
+      var dot = el('span');
+      dot.style.cssText = 'width:10px;height:10px;border-radius:50%;background:' + pair[1] + ';display:inline-block';
+      var lbl = el('span'); lbl.textContent = pair[0];
+      d.appendChild(dot); d.appendChild(lbl);
+      legend.appendChild(d);
+    });
+    c.appendChild(legend);
+  }());
+
+  // ── 3. Selection Panel ───────────────────────────────────────
+
+  (function () {
+    var c = card('Agent Selection — Phase 3', false);
+    var sel = data.selection;
+
+    function buildAgentCard(label, info, isSelected) {
+      var ac = el('div', 'agent-card ' + (isSelected ? 'selected' : 'rejected'));
+      var t = +(info.trust * 100).toFixed(0);
+
+      ac.appendChild(txt('div', 'agent-name', label));
+      ac.appendChild(txt('div', 'agent-trust ' + (t >= 60 ? 'high' : 'low'), t + '%'));
+
+      var vrow = el('div');
+      vrow.style.marginTop = '4px';
+      var vb = txt('span', 'verdict-badge ' + verdictClass(info.verdict), info.verdict);
+      var rc = document.createTextNode(' · ' + info.receipts + ' receipts');
+      vrow.appendChild(vb); vrow.appendChild(rc);
+      ac.appendChild(vrow);
+
+      if (info.riskFlags.length) {
+        var fw = el('div');
+        fw.style.cssText = 'margin-top:6px;font-size:11px;color:#d29922;';
+        fw.textContent = '⚠ ' + info.riskFlags.join(', ');
+        ac.appendChild(fw);
+      }
+
+      ac.appendChild(txt('span', 'status-pill ' + (isSelected ? 'selected' : 'rejected'),
+        isSelected ? '✓ SELECTED' : '✗ REJECTED'));
+      return ac;
+    }
+
+    var row = el('div', 'agent-row');
+    row.appendChild(buildAgentCard('Agent B', sel.agentB, sel.agentB.selected));
+    row.appendChild(buildAgentCard('Agent C', sel.agentC, sel.agentC.selected));
+    c.appendChild(row);
+
+    var cw = chartWrap(90);
+    c.appendChild(cw.wrap);
+
+    new Chart(cw.canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Agent B', 'Agent C'],
+        datasets: [{
+          data: [+(sel.agentB.trust * 100).toFixed(1), +(sel.agentC.trust * 100).toFixed(1)],
+          backgroundColor: [COLORS.green + '66', COLORS.red + '66'],
+          borderColor:     [COLORS.green, COLORS.red],
+          borderWidth: 2,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 0, max: 100, grid: { color: COLORS.border }, ticks: { callback: function(v) { return v + '%'; } } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }());
+
+  // ── 4. Sybil Detection ──────────────────────────────────────
+
+  (function () {
+    var c = card('Sybil Detection — Phase 5', false);
+    var sybil = data.sybil;
+    var agentD = sybil.agentD;
+    var normDiv = sybil.normalDiversity;
+
+    var statsRow = el('div', 'sybil-row');
+
+    function sybilStat(label, valStr, cls) {
+      var s = el('div', 'sybil-stat');
+      s.appendChild(txt('div', 'value ' + cls, valStr));
+      s.appendChild(txt('div', 'slabel', label));
+      return s;
+    }
+
+    var divStr  = agentD.diversity != null ? agentD.diversity.toFixed(3) : 'N/A';
+    var normStr = normDiv != null ? normDiv.toFixed(3) : 'N/A';
+    var trustPct = +(agentD.trust * 100).toFixed(0);
+
+    statsRow.appendChild(sybilStat('Agent D Trust',             trustPct + '%', trustPct < 60 ? 'danger' : 'safe'));
+    statsRow.appendChild(sybilStat('Agent D Diversity',         divStr,         'danger'));
+    statsRow.appendChild(sybilStat('Normal Diversity (Agent B)', normStr,       'safe'));
+    c.appendChild(statsRow);
+
+    if (agentD.riskFlags.length) {
+      var fw = el('div');
+      fw.style.marginBottom = '14px';
+      agentD.riskFlags.forEach(function(f) {
+        var tag = txt('span', 'flag-tag', '⚠ ' + f);
+        tag.style.marginRight = '4px';
+        fw.appendChild(tag);
+      });
+      c.appendChild(fw);
+    }
+
+    var cw = chartWrap(90);
+    c.appendChild(cw.wrap);
+
+    new Chart(cw.canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Agent D (Sybil)', 'Agent B (Normal)'],
+        datasets: [{
+          label: 'Caller Diversity',
+          data: [agentD.diversity, normDiv],
+          backgroundColor: [COLORS.red + '66', COLORS.green + '66'],
+          borderColor:     [COLORS.red, COLORS.green],
+          borderWidth: 2,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx) { return 'Diversity: ' + ctx.raw.toFixed(3); } } }
+        },
+        scales: {
+          x: { min: 0, max: 1, grid: { color: COLORS.border }, ticks: { callback: function(v) { return v.toFixed(1); } } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }());
+
+  // ── 5. Risk Flags Timeline ───────────────────────────────────
+
+  (function () {
+    var c = card('Risk Flags Timeline', false);
+    var ul = el('ul', 'flag-timeline');
+
+    data.phases.forEach(function(p) {
+      var li = el('li', 'flag-item');
+
+      var phDiv = el('div', 'flag-phase');
+      phDiv.appendChild(document.createTextNode('Ph' + p.phase));
+      phDiv.appendChild(el('br'));
+      phDiv.appendChild(txt('span', null, p.receipts + 'r'));
+      li.appendChild(phDiv);
+
+      var tagsDiv = el('div', 'flag-tags');
+      if (p.riskFlags.length) {
+        p.riskFlags.forEach(function(f) {
+          tagsDiv.appendChild(txt('span', 'flag-tag', '⚠ ' + f));
+        });
+      } else {
+        tagsDiv.appendChild(txt('span', 'flag-none', '—'));
+      }
+      li.appendChild(tagsDiv);
+      ul.appendChild(li);
+    });
+
+    c.appendChild(ul);
+  }());
+
+}());
+</script>
+
+</body>
+</html>

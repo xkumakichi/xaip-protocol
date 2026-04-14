@@ -1,199 +1,162 @@
 /**
- * XAIP Core Types
- * Type definitions for the XRPL Agent Identity Protocol
+ * XAIP Protocol — Type Definitions (v0.3.1)
+ *
+ * Root redesign: Bayesian trust model, SigningDelegate, caller diversity.
+ * No magic constants. Mathematically grounded.
  */
 
-// ============================================================
-// Agent Types
-// ============================================================
+// ─── DID ─────────────────────────────────────────────
 
-export type AgentType = "managed" | "supervised" | "autonomous" | "collective";
-export type AgentStatus = "active" | "suspended" | "retired";
-export type AutonomyLevel = 1 | 2 | 3 | 4 | 5;
+export type DIDMethod = "key" | "web" | "xrpl" | "ethr";
 
-export interface AgentCapability {
+export interface ParsedDID {
+  method: DIDMethod;
   id: string;
-  name: string;
-  description?: string;
-  languages?: string[];
-  credentialRef?: string;
 }
 
-export interface OperatorAuthorization {
-  maxTransactionXRP: number;
-  maxDailyXRP: number;
-  allowedDestinations: string[];
-  requiresApproval: boolean;
-  approvalThresholdXRP: number;
-}
+/**
+ * Bayesian priors as Beta(α, β) per DID method.
+ *
+ * Stronger prior = more initial trust, but evidence always wins.
+ * With 100+ receipts, all methods converge to the same score.
+ */
+export const IDENTITY_PRIORS: Record<string, [number, number]> = {
+  key:  [1, 1],   // uniform — no prior knowledge
+  web:  [2, 1],   // slight positive (domain ownership)
+  ethr: [3, 1],   // moderate positive (gas cost)
+  xrpl: [5, 1],   // strong positive (XRP reserve)
+};
 
-export interface AgentOperator {
+// ─── Signing ─────────────────────────────────────────
+
+/**
+ * Delegate that signs payloads without exposing private keys.
+ * The key NEVER leaves the signer's process.
+ */
+export interface SigningDelegate {
   did: string;
-  xrplAddress: string;
-  relationship: AgentType;
-  authorization: OperatorAuthorization;
+  sign(payload: string): Promise<string>;
 }
 
-export interface AgentEndpoints {
-  mcp?: string;
-  a2a?: string;
-  x402?: string;
-  api?: string;
+// ─── Execution Receipt ───────────────────────────────
+
+export type FailureType = "timeout" | "error" | "validation";
+
+export interface ExecutionReceipt {
+  agentDid: string;
+  toolName: string;
+  taskHash: string;
+  resultHash: string;
+  success: boolean;
+  latencyMs: number;
+  failureType?: FailureType;
+  timestamp: string;
+  signature: string;
+  callerDid?: string;
+  callerSignature?: string;
 }
 
-export interface AgentPaymentConfig {
-  accept: string[];
-  preferredCurrency: string;
-  escrowRequired: boolean;
-  escrowRequiredAbove?: number;
+// ─── Trust Score ─────────────────────────────────────
+
+export interface CapabilityScore {
+  score: number;
+  executions: number;
+  recentSuccessRate: number;
 }
 
-export interface AgentModel {
-  provider: string;
-  family: string;
-  version?: string;
+export interface TrustScore {
+  overall: number;
+  byCapability: Record<string, CapabilityScore>;
 }
 
-// ============================================================
-// Agent Card (off-chain, stored on IPFS/HTTPS)
-// ============================================================
+// ─── Query Result ────────────────────────────────────
 
-export interface AgentCard {
-  "@context": string[];
-  id: string; // did:xrpl:1:rAddress
-  type: "AIAgent";
-  version: string;
-
-  agent: {
-    name: string;
-    description: string;
-    model?: AgentModel;
-    created: string; // ISO 8601
-    status: AgentStatus;
-  };
-
-  capabilities: AgentCapability[];
-  autonomyLevel: AutonomyLevel;
-  operator: AgentOperator;
-  endpoints: AgentEndpoints;
-  payment: AgentPaymentConfig;
-
-  reputation: {
-    registryAddress?: string;
-    currentScore?: number | null;
-    link?: string;
-  };
-
-  verificationMethod: Array<{
-    id: string;
-    type: string;
-    controller: string;
-    publicKeyHex: string;
-  }>;
-
-  authentication: string[];
-
-  metadata: {
-    xaipVersion: string;
+export interface QueryResult {
+  verdict: "yes" | "caution" | "no" | "unknown";
+  trust: number;
+  riskFlags: string[];
+  score: TrustScore;
+  meta: {
+    sampleSize: number;
+    bayesianScore: number;
+    callerDiversity: number;
+    coSignedRate: number;
+    prior: [number, number];
     lastUpdated: string;
-    cardHash?: string;
+    sources: number;
+    /** Number of aggregator nodes that reached consensus (BFT quorum). */
+    quorumSize?: number;
   };
 }
 
-// ============================================================
-// Reputation
-// ============================================================
+// ─── Configuration ───────────────────────────────────
 
-export interface ReputationScore {
-  overall: number; // 0-100
-  reliability: number; // 0-100
-  quality: number; // 0-100
-  consistency: number; // 0-100
-  volume: number; // 0-100
-  longevity: number; // 0-100
-  totalTransactions: number;
-  totalEndorsements: number;
-  lastUpdated: string;
+export type PrivacyLevel = "full" | "summary" | "minimal";
+
+export interface XAIPConfig {
+  did?: string;
+  name?: string;
+  capabilities?: string[];
+  privacy?: PrivacyLevel;
+  verbose?: boolean;
+  dbPath?: string;
+  plugins?: XAIPPlugin[];
+  /** Caller signing delegate. Key never leaves caller's process. */
+  callerSigner?: SigningDelegate;
+  /** Aggregator URLs for federation. Pushes to all, queries quorum. */
+  aggregatorUrls?: string[];
+  /** Enable OpenTelemetry export. */
+  otel?: boolean;
 }
 
-export interface ReputationWeights {
-  reliability: number;
-  quality: number;
-  consistency: number;
-  volume: number;
-  longevity: number;
+// ─── Plugin ──────────────────────────────────────────
+
+export interface XAIPPlugin {
+  name: string;
+  init(ctx: XAIPContext): void | Promise<void>;
 }
 
-export const DEFAULT_REPUTATION_WEIGHTS: ReputationWeights = {
-  reliability: 0.30,
-  quality: 0.25,
-  consistency: 0.20,
-  volume: 0.15,
-  longevity: 0.10,
+export interface XAIPContext {
+  did: ParsedDID;
+  publicKey: string;
+  store: import("./store").ReceiptStore;
+}
+
+// ─── Federation / Aggregator ─────────────────────────
+
+export interface AggregatorPushPayload {
+  receipt: ExecutionReceipt;
+  publicKey: string;
+}
+
+export interface AggregatorQueryRequest {
+  agentDid: string;
+  capability?: string;
+}
+
+export interface AggregatorQueryResponse {
+  result: QueryResult;
+  source: string;
+  timestamp: string;
+  /** Ed25519 signature over canonicalized result (proves aggregator identity). */
+  signature?: string;
+  /** Aggregator's public key (SPKI hex) for response verification. */
+  publicKey?: string;
+  /** URLs of nodes excluded as MAD outliers. Present when outliers were detected. */
+  outlierNodes?: string[];
+}
+
+// ─── Rate Limiting (DoS prevention, not Sybil) ──────
+
+export interface RateLimitConfig {
+  maxReceiptsPerDidPerHour: number;
+}
+
+export const DEFAULT_RATE_LIMITS: RateLimitConfig = {
+  maxReceiptsPerDidPerHour: 1000,
 };
 
-// ============================================================
-// Credentials
-// ============================================================
+// ─── Constants ───────────────────────────────────────
 
-export type CredentialType =
-  | "XAIP:Capability"
-  | "XAIP:AutonomyLevel"
-  | "XAIP:Endorsement";
-
-export interface CapabilityCredential {
-  type: "XAIP/Capability";
-  version: string;
-  capability: {
-    domain: string;
-    subDomain?: string;
-    languages?: string[];
-    assessmentMethod: string;
-    score: number;
-    benchmark: string;
-    assessedAt: string;
-    validUntil: string;
-  };
-  assessor: {
-    did: string;
-    name: string;
-    methodology?: string;
-  };
-}
-
-export interface EndorsementCredential {
-  type: "XAIP/Endorsement";
-  version: string;
-  endorsement: {
-    from: string;
-    interaction: {
-      type: string;
-      escrowId?: string;
-      completedAt: string;
-      rating: number; // 1-5
-      qualityScore: number; // 0-100
-      timeliness: "early" | "ontime" | "late";
-      comment?: string;
-    };
-  };
-}
-
-// ============================================================
-// Network Configuration
-// ============================================================
-
-export type XRPLNetwork = "mainnet" | "testnet" | "devnet";
-
-export const XRPL_NETWORKS: Record<XRPLNetwork, string> = {
-  mainnet: "wss://xrplcluster.com",
-  testnet: "wss://s.altnet.rippletest.net:51233",
-  devnet: "wss://s.devnet.rippletest.net:51233",
-};
-
-// ============================================================
-// XAIP Protocol Constants
-// ============================================================
-
-export const XAIP_VERSION = "0.1";
-export const XAIP_PROTOCOL_ID = "XAIP/0.1";
-export const XAIP_PROTOCOL_ID_HEX = "584149502F302E31"; // "XAIP/0.1" in hex
+export const XAIP_VERSION = "0.4.0";
+export const XAIP_PROTOCOL_ID = `XAIP/${XAIP_VERSION}`;

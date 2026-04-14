@@ -1,7 +1,7 @@
 {
   "name": "xaip-sdk",
-  "version": "0.1.0",
-  "description": "XRPL Agent Identity Protocol - AI agents that live, grow, and build trust on the XRP Ledger",
+  "version": "0.4.0",
+  "description": "Chain-agnostic trust protocol for AI agents. Register, Attest, Query, Settle.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -12,48 +12,43 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "jest",
-    "prepublishOnly": "npm run build",
-    "demo:create-agent": "ts-node examples/create-agent.ts",
-    "demo:a2a": "ts-node examples/agent-to-agent-job.ts",
-    "demo:reputation": "ts-node examples/reputation-growth.ts",
-    "demo:marketplace": "ts-node examples/full-marketplace.ts"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "xrpl",
-    "xrp",
-    "ripple",
     "ai",
-    "ai-agent",
     "agent",
+    "trust",
     "identity",
     "did",
-    "decentralized-identity",
-    "reputation",
     "mcp",
-    "model-context-protocol",
     "a2a",
-    "escrow",
-    "credentials",
-    "web3",
-    "blockchain"
+    "reputation",
+    "verification",
+    "protocol"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/xkumakichi/xaip-protocol"
   },
   "homepage": "https://github.com/xkumakichi/xaip-protocol#readme",
-  "bugs": {
-    "url": "https://github.com/xkumakichi/xaip-protocol/issues"
-  },
   "author": "xkumakichi",
   "license": "MIT",
   "dependencies": {
-    "xrpl": "^4.2.0"
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/sdk-trace-node": "^2.6.1",
+    "sql.js": "^1.11.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
-    "ts-node": "^10.9.0",
+    "@types/sql.js": "^1.4.11",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

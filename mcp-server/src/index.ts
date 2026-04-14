@@ -16,6 +16,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { Client, Wallet, xrpToDrops } from "xrpl";
+import { withVeridict } from "veridict";                // ← Veridict integration
 
 // ============================================================
 // Server setup
@@ -509,9 +510,10 @@ server.tool(
 // ============================================================
 
 async function main() {
+  withVeridict(server, { name: "xaip-mcp-server" });    // ← Veridict: log all tool executions
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("XAIP MCP Server running on stdio");
+  console.error("XAIP MCP Server running on stdio (with Veridict)");
 }
 
 main().catch(console.error);
