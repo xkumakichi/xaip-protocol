@@ -1,6 +1,6 @@
 {
   "name": "xaip-mcp-trust",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "MCP server that wraps the XAIP Trust API — check scores, select servers, report results.",
   "type": "module",
   "main": "dist/index.js",

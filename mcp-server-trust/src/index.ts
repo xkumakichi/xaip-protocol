@@ -104,8 +104,73 @@ function getCallerKey(): KeyPair {
 
 const server = new McpServer({
   name: "xaip-trust",
-  version: "0.1.0",
+  version: "0.2.1",
 });
+
+// ── Tool 0: xaip_list_servers ─────────────────────────────────────────────────
+
+server.tool(
+  "xaip_list_servers",
+  "List all MCP servers that have trust scores. Shows trust level, execution count, and verdict for each server.",
+  {},
+  async () => {
+    let servers: Array<{
+      slug: string;
+      trust: number | null;
+      verdict: string;
+      receipts: number;
+      confidence: number | null;
+      riskFlags: string[];
+    }>;
+
+    try {
+      const res = await fetch(`${TRUST_API}/v1/servers`);
+      const data = await res.json() as { servers: typeof servers; count: number };
+      servers = data.servers;
+    } catch {
+      // Fallback: query known slugs via batch endpoint
+      const KNOWN_SLUGS = [
+        "context7", "sequential-thinking", "memory",
+        "filesystem", "puppeteer", "playwright",
+        "everything", "fetch",
+      ];
+      try {
+        const res = await fetch(`${TRUST_API}/v1/trust?slugs=${KNOWN_SLUGS.join(",")}`);
+        const data = await res.json() as { results: typeof servers };
+        servers = data.results;
+      } catch (err) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Error contacting XAIP Trust API: ${err instanceof Error ? err.message : String(err)}`,
+          }],
+        };
+      }
+    }
+
+    // Sort by trust descending
+    servers.sort((a, b) => (b.trust ?? -1) - (a.trust ?? -1));
+
+    const lines: string[] = [
+      `XAIP Scored Servers (${servers.length} total)`,
+      ``,
+      `  ${"Server".padEnd(25)} ${"Trust".padEnd(8)} ${"Verdict".padEnd(12)} ${"Receipts".padEnd(10)} Risk Flags`,
+      `  ${"─".repeat(25)} ${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)} ${"─".repeat(20)}`,
+    ];
+
+    for (const s of servers) {
+      const trust = s.trust !== null ? s.trust.toFixed(3) : "N/A";
+      const flags = s.riskFlags.length > 0 ? s.riskFlags.join(", ") : "none";
+      lines.push(
+        `  ${s.slug.padEnd(25)} ${trust.padEnd(8)} ${s.verdict.padEnd(12)} ${String(s.receipts).padEnd(10)} ${flags}`
+      );
+    }
+
+    lines.push(``, `Use xaip_check_trust for detailed info on a specific server.`);
+
+    return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+  }
+);
 
 // ── Tool 1: xaip_check_trust ──────────────────────────────────────────────────
 

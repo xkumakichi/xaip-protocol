@@ -97,6 +97,18 @@ const LIVE_SCORES: Record<string, SeedEntry> = {
     verdict: "caution",
     riskFlags: ["elevated_error_rate"],
   },
+  "everything": {
+    trust: 0,
+    receipts: 0,
+    verdict: "caution",
+    riskFlags: [],
+  },
+  "fetch": {
+    trust: 0,
+    receipts: 0,
+    verdict: "caution",
+    riskFlags: [],
+  },
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -415,6 +427,19 @@ export default {
       });
     }
 
+    // GET /v1/servers — list all scored servers
+    if (path === "/v1/servers" && request.method === "GET") {
+      const entries = await Promise.all(
+        Object.keys(LIVE_SCORES).map((slug) => lookupScore(slug, env))
+      );
+      entries.sort((a, b) => (b.trust ?? 0) - (a.trust ?? 0));
+      return jsonResponse({
+        servers: entries,
+        count: entries.length,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // GET /v1/trust/:slug
     const singleMatch = path.match(/^\/v1\/trust\/([^/]+)$/);
     if (singleMatch && request.method === "GET") {
@@ -464,7 +489,7 @@ export default {
     return jsonResponse(
       {
         error: "Not found",
-        docs: "GET /v1/trust/:slug  GET /v1/trust?slugs=a,b,c  POST /v1/select",
+        docs: "GET /v1/servers  GET /v1/trust/:slug  GET /v1/trust?slugs=a,b,c  POST /v1/select",
       },
       404
     );

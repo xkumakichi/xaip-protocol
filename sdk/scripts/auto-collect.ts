@@ -491,6 +491,87 @@ async function runFilesystem(
   return { calls, successes, failures, receiptsPosted, receiptsFailed };
 }
 
+async function runEverything(
+  client: Client,
+  agentKp: KeyPair,
+  callerKp: KeyPair
+): Promise<{ calls: number; successes: number; failures: number; receiptsPosted: number; receiptsFailed: number }> {
+  let calls = 0, successes = 0, failures = 0, receiptsPosted = 0, receiptsFailed = 0;
+
+  // echo — 2 calls
+  for (const message of ["hello from XAIP", "trust score test"]) {
+    const args = { message };
+    const { ok, result, latencyMs } = await callTool(client, "echo", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "echo", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // get-sum — 2 calls
+  for (const [a, b] of [[2, 3], [100, 234]] as [number, number][]) {
+    const args = { a, b };
+    const { ok, result, latencyMs } = await callTool(client, "get-sum", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "get-sum", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // get-tiny-image — 1 call
+  {
+    const args = {};
+    const { ok, result, latencyMs } = await callTool(client, "get-tiny-image", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "get-tiny-image", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  return { calls, successes, failures, receiptsPosted, receiptsFailed };
+}
+
+async function runFetch(
+  client: Client,
+  agentKp: KeyPair,
+  callerKp: KeyPair
+): Promise<{ calls: number; successes: number; failures: number; receiptsPosted: number; receiptsFailed: number }> {
+  let calls = 0, successes = 0, failures = 0, receiptsPosted = 0, receiptsFailed = 0;
+
+  // get_raw_text — JSON/text endpoints
+  for (const url of [
+    "https://xaip-trust-api.kuma-github.workers.dev/health",
+    "https://jsonplaceholder.typicode.com/posts/1",
+  ]) {
+    const args = { url };
+    const { ok, result, latencyMs } = await callTool(client, "get_raw_text", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "get_raw_text", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // get_markdown — HTML pages
+  for (const url of [
+    "https://example.com",
+    "https://github.com/xkumakichi/xaip-protocol",
+  ]) {
+    const args = { url };
+    const { ok, result, latencyMs } = await callTool(client, "get_markdown", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "get_markdown", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  return { calls, successes, failures, receiptsPosted, receiptsFailed };
+}
+
 // ─── Server Definitions ───────────────────────────────────────────────────────
 
 interface ServerDef {
@@ -525,6 +606,16 @@ function getServers(): ServerDef[] {
       slug: "filesystem",
       args: ["-y", "@modelcontextprotocol/server-filesystem", repoRoot],
       run: runFilesystem,
+    },
+    {
+      slug: "everything",
+      args: ["-y", "@modelcontextprotocol/server-everything"],
+      run: runEverything,
+    },
+    {
+      slug: "fetch",
+      args: ["-y", "mcp-server-fetch-typescript"],
+      run: runFetch,
     },
   ];
 }
