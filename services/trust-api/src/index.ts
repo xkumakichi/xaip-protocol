@@ -49,9 +49,9 @@ interface TrustResponse {
 
 // ─── Live Data ──────────────────────────────────────────────────────────────
 //
-// Computed from 1,127 real tool-call executions via Veridict monitoring.
+// Computed from 1,234 real tool-call executions via Veridict monitoring.
 // Algorithm: Veridict canITrust() — blended success rate (70% recent + 30% all-time).
-// Last computed: 2026-04-14.
+// Last computed: 2026-04-15.
 
 interface SeedEntry {
   trust: number;
@@ -62,22 +62,40 @@ interface SeedEntry {
 
 const LIVE_SCORES: Record<string, SeedEntry> = {
   "context7": {
-    trust: 1.0,
+    trust: 1,
     receipts: 248,
     verdict: "trusted",
     riskFlags: [],
   },
   "sequential-thinking": {
-    trust: 1.0,
-    receipts: 285,
+    trust: 1,
+    receipts: 815,
     verdict: "trusted",
     riskFlags: [],
   },
   "filesystem": {
-    trust: 0.909,
-    receipts: 594,
+    trust: 0.903,
+    receipts: 62,
     verdict: "caution",
     riskFlags: [],
+  },
+  "memory": {
+    trust: 1,
+    receipts: 40,
+    verdict: "trusted",
+    riskFlags: [],
+  },
+  "playwright": {
+    trust: 0.486,
+    receipts: 37,
+    verdict: "low_trust",
+    riskFlags: ["elevated_error_rate"],
+  },
+  "puppeteer": {
+    trust: 0.844,
+    receipts: 32,
+    verdict: "caution",
+    riskFlags: ["elevated_error_rate"],
   },
 };
 

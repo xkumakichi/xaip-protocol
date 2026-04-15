@@ -147,6 +147,41 @@ const FS_SEARCH = [
   ["veridict", "success"], ["veridict", "failure"],
 ] as [string, string][];
 
+// ── Memory Server Data ───────────────────────────────────────────────
+
+const MEMORY_ENTITIES = [
+  { name: "AI Agent", entityType: "concept", observations: ["Autonomous software entity", "Can execute tasks independently", "Has goals and capabilities"] },
+  { name: "Trust Score", entityType: "metric", observations: ["Numerical measure of reliability", "Computed from execution history", "Range 0.0 to 1.0"] },
+  { name: "MCP Protocol", entityType: "protocol", observations: ["Model Context Protocol by Anthropic", "Enables tool use for LLMs", "Standardized server-client interface"] },
+  { name: "XAIP Protocol", entityType: "project", observations: ["Cross-Agent Identity Protocol", "Provides trust infrastructure", "Built on Veridict monitoring"] },
+  { name: "Veridict", entityType: "library", observations: ["Trust scoring library", "Records execution logs", "Bayesian success rate computation"] },
+  { name: "Cloudflare Worker", entityType: "platform", observations: ["Edge compute platform", "Serverless execution", "Global distribution"] },
+  { name: "BFT Quorum", entityType: "algorithm", observations: ["Byzantine Fault Tolerance", "Multi-node consensus", "MAD outlier detection"] },
+  { name: "Aggregator Node", entityType: "service", observations: ["Collects trust receipts", "Verifies cryptographic signatures", "Stores execution history"] },
+  { name: "Receipt", entityType: "data", observations: ["Signed execution record", "Contains success/failure info", "Includes latency data"] },
+  { name: "DID", entityType: "identifier", observations: ["Decentralized Identifier", "Cryptographic identity", "Used for agent identification"] },
+];
+
+const MEMORY_RELATIONS = [
+  { from: "XAIP Protocol", to: "Veridict", relationType: "uses" },
+  { from: "XAIP Protocol", to: "Aggregator Node", relationType: "consists_of" },
+  { from: "AI Agent", to: "MCP Protocol", relationType: "communicates_via" },
+  { from: "Aggregator Node", to: "Receipt", relationType: "stores" },
+  { from: "BFT Quorum", to: "Aggregator Node", relationType: "coordinates" },
+  { from: "Trust Score", to: "Receipt", relationType: "computed_from" },
+  { from: "AI Agent", to: "DID", relationType: "identified_by" },
+  { from: "Cloudflare Worker", to: "XAIP Protocol", relationType: "hosts" },
+];
+
+// ── Puppeteer / Playwright URLs ──────────────────────────────────────
+
+const BROWSER_URLS = [
+  "https://example.com",
+  "https://httpbin.org/html",
+  "https://httpbin.org/json",
+  "https://jsonplaceholder.typicode.com",
+];
+
 const SERVERS: ServerConfig[] = [
   {
     slug: "context7",
@@ -255,6 +290,284 @@ const SERVERS: ServerConfig[] = [
         const path = join(HOME, dir);
         await recorder.record("directory_tree", { path }, async () => {
           return await client.callTool({ name: "directory_tree", arguments: { path } }, undefined, { timeout: 15000 });
+        });
+      }
+    },
+  },
+  // ── Memory Server ─────────────────────────────────────────────────
+  {
+    slug: "memory",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-memory"],
+    customRunner: async (client, recorder) => {
+      // create_entities — create all test entities
+      for (const entity of MEMORY_ENTITIES) {
+        await recorder.record("create_entities", { entities: [entity] }, async () => {
+          return await client.callTool(
+            { name: "create_entities", arguments: { entities: [{ name: entity.name, entityType: entity.entityType, observations: entity.observations }] } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+
+      // create_relations — add relations between entities
+      for (const rel of MEMORY_RELATIONS) {
+        await recorder.record("create_relations", { relations: [rel] }, async () => {
+          return await client.callTool(
+            { name: "create_relations", arguments: { relations: [rel] } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+
+      // add_observations — add more observations to existing entities
+      const observationBatches = [
+        { entityName: "AI Agent", contents: ["Executes tool calls via MCP", "Monitored by XAIP protocol"] },
+        { entityName: "Trust Score", contents: ["Used for agent selection", "Updated after each execution"] },
+        { entityName: "MCP Protocol", contents: ["Uses stdio transport", "JSON-RPC based messages"] },
+        { entityName: "XAIP Protocol", contents: ["v0.4.0 currently deployed", "Phase 1 collecting real data"] },
+        { entityName: "Veridict", contents: ["npm package available", "Integrates with SQLite"] },
+        { entityName: "Cloudflare Worker", contents: ["Used for Trust API", "Used for Aggregator"] },
+      ];
+      for (const batch of observationBatches) {
+        await recorder.record("add_observations", batch, async () => {
+          return await client.callTool(
+            { name: "add_observations", arguments: { observations: [batch] } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+
+      // search_nodes — search for entities by various queries
+      const searchQueries = [
+        "AI", "trust", "protocol", "XAIP", "agent",
+        "MCP", "Cloudflare", "receipt", "DID", "score",
+      ];
+      for (const query of searchQueries) {
+        await recorder.record("search_nodes", { query }, async () => {
+          return await client.callTool(
+            { name: "search_nodes", arguments: { query } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+
+      // read_graph — read full graph multiple times
+      for (let i = 0; i < 3; i++) {
+        await recorder.record("read_graph", {}, async () => {
+          return await client.callTool(
+            { name: "read_graph", arguments: {} },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+
+      // delete_entities — cleanup a few test entities
+      const toDelete = ["Cloudflare Worker", "BFT Quorum", "DID"];
+      for (const entityName of toDelete) {
+        await recorder.record("delete_entities", { entityNames: [entityName] }, async () => {
+          return await client.callTool(
+            { name: "delete_entities", arguments: { entityNames: [entityName] } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+      }
+    },
+  },
+  // ── Puppeteer Server ──────────────────────────────────────────────
+  {
+    slug: "puppeteer",
+    command: "npx",
+    args: ["-y", "@modelcontextprotocol/server-puppeteer"],
+    customRunner: async (client, recorder) => {
+      for (const url of BROWSER_URLS) {
+        // Navigate
+        await recorder.record("puppeteer_navigate", { url }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_navigate", arguments: { url } },
+            undefined,
+            { timeout: 30000 },
+          );
+        });
+
+        // Screenshot
+        await recorder.record("puppeteer_screenshot", { name: `shot_${url.replace(/[^a-z0-9]/gi, "_")}` }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_screenshot", arguments: { name: `shot_${url.replace(/[^a-z0-9]/gi, "_")}` } },
+            undefined,
+            { timeout: 30000 },
+          );
+        });
+
+        // Evaluate — document.title
+        await recorder.record("puppeteer_evaluate", { script: "document.title" }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_evaluate", arguments: { script: "document.title" } },
+            undefined,
+            { timeout: 15000 },
+          );
+        });
+
+        // Evaluate — count links
+        await recorder.record("puppeteer_evaluate", { script: "document.querySelectorAll('a').length" }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_evaluate", arguments: { script: "document.querySelectorAll('a').length" } },
+            undefined,
+            { timeout: 15000 },
+          );
+        });
+
+        // Click first link (may fail — good for real failure data)
+        await recorder.record("puppeteer_click", { selector: "a" }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_click", arguments: { selector: "a" } },
+            undefined,
+            { timeout: 15000 },
+          );
+        });
+
+        // Navigate back after click
+        await recorder.record("puppeteer_navigate", { url }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_navigate", arguments: { url } },
+            undefined,
+            { timeout: 30000 },
+          );
+        });
+
+        // Click button (will fail on pages without buttons — expected)
+        await recorder.record("puppeteer_click", { selector: "button" }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_click", arguments: { selector: "button" } },
+            undefined,
+            { timeout: 10000 },
+          );
+        });
+
+        // Evaluate — body text length
+        await recorder.record("puppeteer_evaluate", { script: "document.body.innerText.length" }, async () => {
+          return await client.callTool(
+            { name: "puppeteer_evaluate", arguments: { script: "document.body.innerText.length" } },
+            undefined,
+            { timeout: 15000 },
+          );
+        });
+      }
+    },
+  },
+  // ── Playwright Server ─────────────────────────────────────────────
+  {
+    slug: "playwright",
+    command: "npx",
+    args: ["-y", "@playwright/mcp@latest", "--headless"],
+    customRunner: async (client, recorder) => {
+      // Discover available tools at runtime
+      let toolNames: string[] = [];
+      try {
+        const tools = await client.listTools();
+        toolNames = tools.tools.map(t => t.name);
+        log(`  Playwright tools: ${toolNames.join(", ")}`);
+      } catch (err: any) {
+        log(`  Failed to list Playwright tools: ${err.message}`);
+        return;
+      }
+
+      const navigateTool = toolNames.find(n => /navigate|goto/i.test(n)) ?? "browser_navigate";
+      const screenshotTool = toolNames.find(n => /screenshot/i.test(n)) ?? "browser_screenshot";
+      const snapshotTool = toolNames.find(n => /snapshot|accessibility/i.test(n)) ?? "browser_snapshot";
+      const clickTool = toolNames.find(n => /^browser_click$|^click$/i.test(n)) ?? "browser_click";
+      const evaluateTool = toolNames.find(n => /evaluate|javascript/i.test(n)) ?? "browser_evaluate";
+
+      const hasNavigate = toolNames.includes(navigateTool);
+      const hasScreenshot = toolNames.includes(screenshotTool);
+      const hasSnapshot = toolNames.includes(snapshotTool);
+      const hasClick = toolNames.includes(clickTool);
+      const hasEvaluate = toolNames.includes(evaluateTool);
+
+      for (const url of BROWSER_URLS) {
+        // Navigate
+        if (hasNavigate) {
+          await recorder.record(navigateTool, { url }, async () => {
+            return await client.callTool(
+              { name: navigateTool, arguments: { url } },
+              undefined,
+              { timeout: 30000 },
+            );
+          });
+        }
+
+        // Screenshot
+        if (hasScreenshot) {
+          await recorder.record(screenshotTool, {}, async () => {
+            return await client.callTool(
+              { name: screenshotTool, arguments: {} },
+              undefined,
+              { timeout: 30000 },
+            );
+          });
+        }
+
+        // Accessibility snapshot
+        if (hasSnapshot) {
+          await recorder.record(snapshotTool, {}, async () => {
+            return await client.callTool(
+              { name: snapshotTool, arguments: {} },
+              undefined,
+              { timeout: 15000 },
+            );
+          });
+        }
+
+        // Click first link (may fail)
+        if (hasClick) {
+          await recorder.record(clickTool, { element: "first link", ref: "a" }, async () => {
+            return await client.callTool(
+              { name: clickTool, arguments: { element: "first link", ref: "a" } },
+              undefined,
+              { timeout: 15000 },
+            );
+          });
+          // Navigate back
+          if (hasNavigate) {
+            await recorder.record(navigateTool, { url }, async () => {
+              return await client.callTool(
+                { name: navigateTool, arguments: { url } },
+                undefined,
+                { timeout: 30000 },
+              );
+            });
+          }
+        }
+
+        // Evaluate JS
+        if (hasEvaluate) {
+          for (const expression of ["document.title", "document.querySelectorAll('a').length", "document.body.innerText.length"]) {
+            await recorder.record(evaluateTool, { expression }, async () => {
+              return await client.callTool(
+                { name: evaluateTool, arguments: { expression } },
+                undefined,
+                { timeout: 15000 },
+              );
+            });
+          }
+        }
+      }
+
+      // Try any additional discovered tools with no args
+      const coreTools = new Set([navigateTool, screenshotTool, snapshotTool, clickTool, evaluateTool]);
+      for (const toolName of toolNames.filter(n => !coreTools.has(n)).slice(0, 5)) {
+        await recorder.record(toolName, {}, async () => {
+          return await client.callTool(
+            { name: toolName, arguments: {} },
+            undefined,
+            { timeout: 10000 },
+          );
         });
       }
     },
@@ -385,7 +698,12 @@ async function testServer(config: ServerConfig, db: any, flush: () => void): Pro
   const { total, success, fail } = recorder.stats;
   log(`  ${config.slug}: ${total} calls, ${success} success, ${fail} fail (${((success/Math.max(total,1))*100).toFixed(1)}%)`);
 
-  try { await client.close(); } catch { /* ignore */ }
+  try {
+    await Promise.race([
+      client.close(),
+      new Promise<void>(resolve => setTimeout(resolve, 3000)),
+    ]);
+  } catch { /* ignore */ }
   return total;
 }
 
