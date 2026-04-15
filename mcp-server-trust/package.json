@@ -1,0 +1,47 @@
+{
+  "name": "xaip-mcp-trust",
+  "version": "0.1.0",
+  "description": "MCP server that wraps the XAIP Trust API — check scores, select servers, report results.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "xaip-mcp-trust": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "node scripts/add-shebang.cjs",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "agent",
+    "trust",
+    "xaip",
+    "reputation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol/tree/main/mcp-server-trust",
+  "author": "xkumakichi",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
