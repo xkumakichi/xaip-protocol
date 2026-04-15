@@ -109,6 +109,18 @@ const LIVE_SCORES: Record<string, SeedEntry> = {
     verdict: "caution",
     riskFlags: [],
   },
+  "sqlite": {
+    trust: 0,
+    receipts: 0,
+    verdict: "caution",
+    riskFlags: [],
+  },
+  "git": {
+    trust: 0,
+    receipts: 0,
+    verdict: "caution",
+    riskFlags: [],
+  },
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

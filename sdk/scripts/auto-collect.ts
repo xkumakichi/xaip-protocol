@@ -572,6 +572,140 @@ async function runFetch(
   return { calls, successes, failures, receiptsPosted, receiptsFailed };
 }
 
+async function runSqlite(
+  client: Client,
+  agentKp: KeyPair,
+  callerKp: KeyPair
+): Promise<{ calls: number; successes: number; failures: number; receiptsPosted: number; receiptsFailed: number }> {
+  let calls = 0, successes = 0, failures = 0, receiptsPosted = 0, receiptsFailed = 0;
+
+  // create_table
+  {
+    const args = { query: "CREATE TABLE IF NOT EXISTS xaip_test (id INTEGER PRIMARY KEY, name TEXT, score REAL)" };
+    const { ok, result, latencyMs } = await callTool(client, "create_table", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "create_table", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // write_query — 2 inserts
+  for (const row of [
+    "INSERT OR REPLACE INTO xaip_test (id, name, score) VALUES (1, 'context7', 0.564)",
+    "INSERT OR REPLACE INTO xaip_test (id, name, score) VALUES (2, 'memory', 0.699)",
+  ]) {
+    const args = { query: row };
+    const { ok, result, latencyMs } = await callTool(client, "write_query", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "write_query", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // read_query
+  {
+    const args = { query: "SELECT * FROM xaip_test ORDER BY score DESC" };
+    const { ok, result, latencyMs } = await callTool(client, "read_query", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "read_query", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // list_tables + describe_table
+  {
+    const args = {};
+    const { ok, result, latencyMs } = await callTool(client, "list_tables", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "list_tables", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  {
+    const args = { table_name: "xaip_test" };
+    const { ok, result, latencyMs } = await callTool(client, "describe_table", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "describe_table", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  return { calls, successes, failures, receiptsPosted, receiptsFailed };
+}
+
+async function runGit(
+  client: Client,
+  agentKp: KeyPair,
+  callerKp: KeyPair
+): Promise<{ calls: number; successes: number; failures: number; receiptsPosted: number; receiptsFailed: number }> {
+  let calls = 0, successes = 0, failures = 0, receiptsPosted = 0, receiptsFailed = 0;
+
+  const repoPath = path.resolve(process.cwd(), "..");
+
+  // git_set_working_dir
+  {
+    const args = { path: repoPath };
+    const { ok, result, latencyMs } = await callTool(client, "git_set_working_dir", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "git_set_working_dir", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // git_status
+  {
+    const args = {};
+    const { ok, result, latencyMs } = await callTool(client, "git_status", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "git_status", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // git_log — recent 5 commits
+  {
+    const args = { maxCount: 5 };
+    const { ok, result, latencyMs } = await callTool(client, "git_log", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "git_log", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // git_branch — list branches
+  {
+    const args = {};
+    const { ok, result, latencyMs } = await callTool(client, "git_branch", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "git_branch", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  // git_diff
+  {
+    const args = {};
+    const { ok, result, latencyMs } = await callTool(client, "git_diff", args);
+    calls++;
+    if (ok) successes++; else failures++;
+    const post = await postReceipt({ agentKp, callerKp, toolName: "git_diff", taskInput: args, result, success: ok, latencyMs });
+    post.ok ? receiptsPosted++ : receiptsFailed++;
+    process.stdout.write(ok ? "." : "x");
+  }
+
+  return { calls, successes, failures, receiptsPosted, receiptsFailed };
+}
+
 // ─── Server Definitions ───────────────────────────────────────────────────────
 
 interface ServerDef {
@@ -616,6 +750,16 @@ function getServers(): ServerDef[] {
       slug: "fetch",
       args: ["-y", "mcp-server-fetch-typescript"],
       run: runFetch,
+    },
+    {
+      slug: "sqlite",
+      args: ["-y", "mcp-server-sqlite-npx", path.join(require("os").tmpdir(), "xaip-sqlite-test.db")],
+      run: runSqlite,
+    },
+    {
+      slug: "git",
+      args: ["-y", "@cyanheads/git-mcp-server"],
+      run: runGit,
     },
   ];
 }

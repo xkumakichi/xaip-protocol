@@ -132,7 +132,7 @@ server.tool(
       const KNOWN_SLUGS = [
         "context7", "sequential-thinking", "memory",
         "filesystem", "puppeteer", "playwright",
-        "everything", "fetch",
+        "everything", "fetch", "sqlite", "git",
       ];
       try {
         const res = await fetch(`${TRUST_API}/v1/trust?slugs=${KNOWN_SLUGS.join(",")}`);
