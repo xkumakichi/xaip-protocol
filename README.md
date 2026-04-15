@@ -96,10 +96,36 @@ console.log(decision.selected);    // "context7"
 console.log(decision.withoutXAIP); // "Random selection would pick an unscored server 33% of the time..."
 ```
 
+## MCP Server
+
+Use XAIP directly from Claude, Cursor, or any MCP-compatible AI agent:
+
+```bash
+npx xaip-mcp-trust
+```
+
+4 tools: `xaip_list_servers`, `xaip_check_trust`, `xaip_select`, `xaip_report`
+
+Add to Claude Code (`~/.claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "xaip-trust": {
+      "command": "npx",
+      "args": ["-y", "xaip-mcp-trust"]
+    }
+  }
+}
+```
+
+npm: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
+
 ## API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET` | `/v1/servers` | List all scored servers with trust data |
 | `GET` | `/v1/trust/:slug` | Trust score for a single MCP server |
 | `GET` | `/v1/trust?slugs=a,b,c` | Batch trust scores (max 50) |
 | `POST` | `/v1/select` | Decision engine — pick best candidate for a task |
@@ -181,22 +207,28 @@ XRPL's native DID support (XLS-40) makes it a natural foundation for agent ident
 
 Trust scores are computed from real execution data, not synthetic benchmarks:
 
-- **1,127** real MCP tool-call executions monitored via [Veridict](https://github.com/xkumakichi/veridict)
-- **3** MCP servers scored: context7, sequential-thinking, filesystem
-- **1,033** signed receipts stored in the Aggregator
+- **2,100+** verified tool-call executions
+- **10** MCP servers scored: context7, sequential-thinking, memory, filesystem, everything, fetch, sqlite, git, puppeteer, playwright
+- Automated daily data collection via GitHub Actions
 - Scores update with every new execution receipt
+
+```bash
+# See all scored servers
+curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
+```
 
 ## Status
 
-**v0.4.0** — Live infrastructure
+**v0.4.0** — Live infrastructure, 10 servers scored
 
 - [x] Trust Score API (Cloudflare Worker, live)
 - [x] Decision Engine (`POST /v1/select`)
 - [x] Aggregator with BFT federation (Cloudflare D1)
 - [x] Ed25519 receipt signing + verification
 - [x] Bayesian trust model with caller diversity
-- [x] Real execution data (1,127 tool calls)
-- [x] End-to-end dogfooding demo
+- [x] 10 MCP servers scored (2,100+ executions)
+- [x] Automated daily data collection (GitHub Actions)
+- [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
 - [ ] Multi-user caller diversity (currently single-operator)
 - [ ] Platform integrations (Smithery, Glama)
@@ -204,6 +236,7 @@ Trust scores are computed from real execution data, not synthetic benchmarks:
 
 ## Related
 
+- [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust) — MCP server for AI agents to check trust scores
 - [Veridict](https://github.com/xkumakichi/veridict) — AI agent trust decision layer (runtime monitoring)
 - [XAIP Specification](./XAIP-SPEC-v0.1.md) — Full protocol specification
 
