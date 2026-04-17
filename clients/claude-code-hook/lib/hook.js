@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /**
- * xaip-claude-hook
+ * xaip-claude-hook-run
  *
  * Claude Code hook that emits signed XAIP receipts for every MCP tool call.
  * Reads the hook JSON payload from stdin, extracts server/tool/input/output,
  * signs with Ed25519 caller + agent keys (persisted in ~/.xaip/hook-keys.json),
  * and POSTs to the XAIP Aggregator.
  *
- * Install:
- *   .claude/settings.json → hooks.PreToolUse + PostToolUse with matcher "mcp__.*"
+ * Invoked by Claude Code via settings.json → hooks.PreToolUse / PostToolUse
+ * with matcher "mcp__.*".
  *
- * Zero npm dependencies. Runs on Node >= 18 (uses global fetch).
+ * Zero npm dependencies. Requires Node >= 18 (global fetch).
+ *
+ * Environment:
+ *   XAIP_AGGREGATOR_URL   override Aggregator endpoint (default: live Cloudflare Worker)
+ *   XAIP_DISABLED=1       silently no-op (e.g. on CI or offline)
  */
 
 const fs = require("fs");
@@ -120,12 +124,23 @@ function parseMcpTool(toolName) {
   if (idx < 0) return null;
   let server = rest.substring(0, idx);
   const tool = rest.substring(idx + 2);
-  // Normalize Claude Code plugin-namespaced names:
-  // "plugin_context7_context7" → "context7"
+  // Claude Code plugin namespace: "plugin_<plugin>_<server>" → "<server>"
   const pluginMatch = server.match(/^plugin_[^_]+_(.+)$/);
   if (pluginMatch) server = pluginMatch[1];
   return { server, tool };
 }
+
+const ERROR_PATTERNS_LOWER = [
+  "quota exceeded",
+  "rate limit",
+  "rate-limit",
+  "forbidden",
+  "unauthorized",
+  "authentication failed",
+  "not authorized",
+  '"iserror":true',
+  '"iserror": true',
+];
 
 function inferSuccess(toolResponse) {
   if (!Array.isArray(toolResponse)) return true;
@@ -133,8 +148,9 @@ function inferSuccess(toolResponse) {
     if (block && block.type === "text" && typeof block.text === "string") {
       const t = block.text.trim().toLowerCase();
       if (t.startsWith("error:") || t.startsWith("error ")) return false;
-      if (t.includes('"iserror":true') || t.includes("'iserror': true"))
-        return false;
+      for (const p of ERROR_PATTERNS_LOWER) {
+        if (t.includes(p)) return false;
+      }
     }
   }
   return true;
@@ -242,6 +258,7 @@ async function handlePost(data) {
 }
 
 async function main() {
+  if (process.env.XAIP_DISABLED === "1") return;
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;
   try {

@@ -1,0 +1,40 @@
+{
+  "name": "xaip-claude-hook",
+  "version": "0.1.0",
+  "description": "Claude Code hook that emits signed XAIP receipts for every MCP tool call — turns your normal MCP usage into live trust data.",
+  "bin": {
+    "xaip-claude-hook": "./bin/xaip-init.js",
+    "xaip-claude-hook-run": "./lib/hook.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "xaip",
+    "claude-code",
+    "claude",
+    "mcp",
+    "hook",
+    "trust",
+    "reputation",
+    "ai-agent",
+    "telemetry"
+  ],
+  "author": "xkumakichi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol.git",
+    "directory": "clients/claude-code-hook"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol/tree/main/clients/claude-code-hook",
+  "bugs": {
+    "url": "https://github.com/xkumakichi/xaip-protocol/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
