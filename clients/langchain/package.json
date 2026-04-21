@@ -1,0 +1,52 @@
+{
+  "name": "xaip-langchain",
+  "version": "0.1.0",
+  "description": "XAIP callback handler for LangChain.js — emits signed XAIP receipts for every tool call. Provider-agnostic trust layer, drop-in.",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "require": "./lib/index.js",
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
+  "keywords": [
+    "xaip",
+    "langchain",
+    "langchain-js",
+    "trust",
+    "reputation",
+    "ai-agent",
+    "tool-calling",
+    "callback-handler",
+    "telemetry"
+  ],
+  "author": "xkumakichi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol.git",
+    "directory": "clients/langchain"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol/tree/main/clients/langchain",
+  "bugs": {
+    "url": "https://github.com/xkumakichi/xaip-protocol/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@langchain/core": ">=0.3.0"
+  },
+  "peerDependenciesMeta": {
+    "@langchain/core": {
+      "optional": false
+    }
+  }
+}
