@@ -28,3 +28,12 @@ tools/awesome-mcp-servers/
 
 # Private outreach notes (not for public repo)
 docs/outreach/
+
+# Wrangler / Cloudflare local state
+.wrangler/
+
+# Playwright MCP local cache
+.playwright-mcp/
+
+# npm pack tarballs (publish-only artifact)
+*.tgz
