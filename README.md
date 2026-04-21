@@ -2,7 +2,9 @@
 
 > Your AI agent picks tools blind. XAIP gives it eyes.
 
-When an AI agent delegates work to an MCP server, it has no idea whether that server is reliable. XAIP fixes this with cryptographically signed execution receipts, Bayesian trust scoring, and a decision engine that picks the best candidate — live, right now.
+When an AI agent delegates work to an external tool, it has no idea whether that tool will succeed, fail silently, or burn latency. XAIP fixes this with cryptographically signed execution receipts, Bayesian trust scoring, and a decision engine that picks the best candidate — live, right now.
+
+**Provider-agnostic by design.** XAIP is a trust layer for any tool-using agent. The reference implementation and live data start with **MCP** (Model Context Protocol) — because that's where the broadest fleet of public tool servers exists today — but the receipt format, signing, and scoring apply equally to LangChain tools, OpenAI function calling, A2A, and proprietary agent stacks. MCP is the first integration, not the only one.
 
 **Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current trust scores for 10 MCP servers, auto-refreshed, no auth.
 
@@ -218,6 +220,17 @@ Trust scores are computed from real execution data, not synthetic benchmarks:
 # See all scored servers
 curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
 ```
+
+## Works With
+
+| Provider | Status | How |
+|---|---|---|
+| **MCP** (Model Context Protocol) | ✅ live | `xaip-claude-hook` for Claude Code; `xaip-sdk` for any MCP client; 10 servers scored, 2,100+ receipts |
+| **LangChain** | 🛠 planned (v0.5) | `xaip-langchain` wrapper around `BaseTool` |
+| **OpenAI tool calling** | 🛠 planned (v0.5) | `xaip-openai` wrapper for `tools` parameter |
+| **A2A / proprietary** | ✅ supported | Use `xaip-sdk` directly — receipt format is provider-neutral |
+
+The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid`, `taskHash`, `resultHash`, `success`, `latencyMs`, `failureType`, `timestamp`. Any agent framework that can hash inputs/outputs and sign with Ed25519 can contribute receipts.
 
 ## Status
 
