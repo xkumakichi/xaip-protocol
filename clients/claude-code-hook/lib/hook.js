@@ -26,9 +26,18 @@ const AGGREGATOR_URL =
   process.env.XAIP_AGGREGATOR_URL ||
   "https://xaip-aggregator.kuma-github.workers.dev";
 
+const TRUST_API_URL =
+  process.env.XAIP_TRUST_API_URL ||
+  "https://xaip-trust-api.kuma-github.workers.dev";
+
+const TRUST_WARN_THRESHOLD = Number(process.env.XAIP_TRUST_WARN_THRESHOLD || "0.5");
+const TRUST_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const TRUST_FETCH_TIMEOUT_MS = 2000;
+
 const XAIP_DIR = path.join(os.homedir(), ".xaip");
 const KEY_FILE = path.join(XAIP_DIR, "hook-keys.json");
 const PENDING_DIR = path.join(XAIP_DIR, "pending");
+const TRUST_CACHE_DIR = path.join(XAIP_DIR, "trust-cache");
 const LOG_FILE = path.join(XAIP_DIR, "hook.log");
 
 function log(msg) {
@@ -208,6 +217,97 @@ async function postReceipt(agent, caller, data) {
   return { status: res.status, body: text };
 }
 
+function trustCachePath(slug) {
+  return path.join(TRUST_CACHE_DIR, `${slug}.json`);
+}
+
+function readTrustCache(slug) {
+  try {
+    const p = trustCachePath(slug);
+    if (!fs.existsSync(p)) return null;
+    const entry = JSON.parse(fs.readFileSync(p, "utf8"));
+    if (!entry || typeof entry.fetchedAt !== "number") return null;
+    if (Date.now() - entry.fetchedAt > TRUST_CACHE_TTL_MS) return null;
+    return entry.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeTrustCache(slug, data) {
+  try {
+    fs.mkdirSync(TRUST_CACHE_DIR, { recursive: true });
+    fs.writeFileSync(
+      trustCachePath(slug),
+      JSON.stringify({ fetchedAt: Date.now(), data })
+    );
+  } catch (e) {
+    log(`trust cache write error: ${e.message}`);
+  }
+}
+
+async function fetchTrust(slug) {
+  const cached = readTrustCache(slug);
+  if (cached) return cached;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TRUST_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${TRUST_API_URL}/v1/trust/${encodeURIComponent(slug)}`, {
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    writeTrustCache(slug, data);
+    return data;
+  } catch (e) {
+    log(`trust fetch error (${slug}): ${e.message}`);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function formatTrustWarning(slug, data) {
+  const score = typeof data.trust === "number" ? data.trust : null;
+  const verdict = data.verdict || "unknown";
+  const receipts =
+    typeof data.receipts === "number"
+      ? data.receipts
+      : typeof data.totalReceipts === "number"
+        ? data.totalReceipts
+        : null;
+  const flags = Array.isArray(data.riskFlags)
+    ? data.riskFlags.filter(Boolean)
+    : Array.isArray(data.flags)
+      ? data.flags.filter(Boolean)
+      : [];
+  const parts = [];
+  parts.push(`⚠ XAIP: "${slug}"`);
+  if (score !== null) parts.push(`trust=${score.toFixed(2)}`);
+  parts.push(`(${verdict}`);
+  if (receipts !== null) parts[parts.length - 1] += `, ${receipts} receipts`;
+  parts[parts.length - 1] += ")";
+  if (flags.length) parts.push(`Risk: ${flags.join(", ")}`);
+  return parts.join(" ");
+}
+
+async function maybeWarn(slug) {
+  if (process.env.XAIP_WARN_DISABLED === "1") return;
+  const data = await fetchTrust(slug);
+  if (!data || typeof data.trust !== "number") return;
+  if (data.trust >= TRUST_WARN_THRESHOLD) return;
+  const msg = formatTrustWarning(slug, data);
+  const out = {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      systemMessage: msg,
+      permissionDecision: "allow",
+    },
+  };
+  process.stdout.write(JSON.stringify(out));
+  log(`WARN ${slug} trust=${data.trust} → emitted systemMessage`);
+}
+
 async function handlePre(data) {
   const parsed = parseMcpTool(data.tool_name);
   if (!parsed) return;
@@ -218,6 +318,7 @@ async function handlePre(data) {
     tool: parsed.tool,
   };
   fs.writeFileSync(pendingPath(data.tool_use_id), JSON.stringify(record));
+  await maybeWarn(parsed.server);
 }
 
 async function handlePost(data) {

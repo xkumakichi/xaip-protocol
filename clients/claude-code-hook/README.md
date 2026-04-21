@@ -1,8 +1,13 @@
 # xaip-claude-hook
 
-> Turn your normal Claude Code + MCP usage into live trust data.
+> Warns you before Claude Code calls a low-trust MCP server — and turns every call into live trust data.
 
-A zero-config Claude Code hook that emits signed [XAIP](https://github.com/xkumakichi/xaip-protocol) receipts for every MCP tool call. Install once — every subsequent MCP tool invocation automatically contributes to the trust scoring of that server.
+A zero-config Claude Code hook that:
+
+1. **Warns** you before Claude invokes an MCP server with a low [XAIP](https://github.com/xkumakichi/xaip-protocol) trust score (shown inline in your session).
+2. **Emits** a signed receipt for every MCP tool call, contributing to that server's live trust score.
+
+Install once — protection and participation in the same step.
 
 ## Why
 
@@ -78,6 +83,22 @@ Each MCP tool call produces one Ed25519-signed receipt:
 - Your caller key lives on your machine only (`~/.xaip/hook-keys.json`)
 - Hook can be disabled per-session: `export XAIP_DISABLED=1`
 - Uninstall is fully reversible
+
+## Trust warnings
+
+Before each MCP tool call, the hook queries the XAIP Trust API for the server's current score. If the score is below the threshold (default `0.5`), Claude displays an inline warning like:
+
+```
+⚠ XAIP: "some-server" trust=0.32 (caution, 87 receipts) Risk: high_failure_rate, low_caller_diversity
+```
+
+The call is **not blocked** — you still get to decide. Trust results are cached locally for 1 hour. If the Trust API is unreachable, no warning fires (hook stays silent and never blocks your tools).
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `XAIP_TRUST_WARN_THRESHOLD` | `0.5` | Warn when `trust <` this value |
+| `XAIP_TRUST_API_URL` | public Cloudflare Worker | Override Trust API endpoint |
+| `XAIP_WARN_DISABLED` | unset | Set to `1` to skip warnings (still emits receipts) |
 
 ## Custom Aggregator
 
