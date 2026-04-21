@@ -4,6 +4,8 @@
 
 When an AI agent delegates work to an MCP server, it has no idea whether that server is reliable. XAIP fixes this with cryptographically signed execution receipts, Bayesian trust scoring, and a decision engine that picks the best candidate — live, right now.
 
+**Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current trust scores for 10 MCP servers, auto-refreshed, no auth.
+
 ## Try It Now
 
 The API is live. No signup, no API key.
