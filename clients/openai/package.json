@@ -1,0 +1,43 @@
+{
+  "name": "xaip-openai",
+  "version": "0.1.0",
+  "description": "XAIP wrapper for OpenAI tool calling — emits signed XAIP receipts for every tool execution. Provider-agnostic trust layer, zero deps.",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "require": "./lib/index.js",
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
+  "keywords": [
+    "xaip",
+    "openai",
+    "function-calling",
+    "tool-calling",
+    "trust",
+    "reputation",
+    "ai-agent",
+    "telemetry"
+  ],
+  "author": "xkumakichi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol.git",
+    "directory": "clients/openai"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol/tree/main/clients/openai",
+  "bugs": {
+    "url": "https://github.com/xkumakichi/xaip-protocol/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
