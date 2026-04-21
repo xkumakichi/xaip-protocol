@@ -25,3 +25,6 @@ tools/mcp-publisher.exe
 tools/mcp-publisher.tar.gz
 tools/.mcp_publisher_token
 tools/awesome-mcp-servers/
+
+# Private outreach notes (not for public repo)
+docs/outreach/

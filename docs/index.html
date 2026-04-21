@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>XAIP — Behavioral Trust Scoring for MCP Servers</title>
+  <meta name="description" content="Live Bayesian trust scores for MCP servers, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
+  <meta property="og:title" content="XAIP — Behavioral Trust Scoring for MCP Servers" />
+  <meta property="og:description" content="Live Bayesian trust scores for MCP servers, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #10161d;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --accent: #58a6ff;
+      --trusted: #3fb950;
+      --caution: #d29922;
+      --low: #f85149;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 860px; margin: 0 auto; padding: 48px 20px 80px; }
+    header { margin-bottom: 32px; }
+    h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .tagline { color: var(--muted); font-size: 14px; margin: 0; }
+    h2 { font-size: 16px; margin: 32px 0 12px; color: var(--fg); }
+    p { color: var(--fg); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: var(--mono); font-size: 13px; }
+    pre {
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 12px 14px; border-radius: 6px; overflow-x: auto;
+      font-size: 13px; margin: 8px 0 16px;
+    }
+    table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td.num { text-align: right; }
+    .verdict { font-weight: 600; }
+    .verdict.trusted { color: var(--trusted); }
+    .verdict.caution { color: var(--caution); }
+    .verdict.low_trust { color: var(--low); }
+    .flag {
+      display: inline-block; background: var(--panel); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 10px; font-size: 11px; color: var(--muted);
+    }
+    .disclosure {
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 14px 16px; border-radius: 6px; color: var(--muted); font-size: 14px;
+      margin: 20px 0 0;
+    }
+    .disclosure strong { color: var(--fg); }
+    .status-bar {
+      display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--muted);
+      margin-top: 10px; font-family: var(--mono);
+    }
+    .dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--trusted); box-shadow: 0 0 6px var(--trusted);
+    }
+    footer {
+      margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px;
+    }
+    .err { color: var(--low); font-family: var(--mono); font-size: 13px; }
+    .note {
+      color: var(--muted); font-size: 13.5px; border-left: 2px solid var(--border);
+      padding: 2px 0 2px 12px; margin: 12px 0 20px;
+    }
+    .note strong { color: var(--fg); font-family: var(--mono); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>XAIP Protocol</h1>
+      <p class="tagline">Behavioral trust scoring for MCP servers — open protocol, zero-auth API.</p>
+    </header>
+
+    <p>When an agent calls a service, a signed transaction proves the call was <em>authorized</em>. It does not prove the call was <em>safe to make</em>. XAIP is one attempt at that missing layer: dual-signed Ed25519 receipts per MCP tool call (hashes only — no raw content leaves your machine), aggregated into a live Bayesian trust score per server.</p>
+
+    <p>Every score below is computed from real receipts and is queryable without auth:</p>
+
+    <pre><code>curl https://xaip-trust-api.kuma-github.workers.dev/v1/trust/context7</code></pre>
+
+    <p class="note"><strong>trust</strong> — observed success probability for this server, based on signed execution receipts. Higher means the server has succeeded more often, across more independent callers, with fewer error patterns.</p>
+
+    <h2>Live trust scores</h2>
+    <div class="status-bar">
+      <span class="dot" id="dot"></span>
+      <span id="status">loading…</span>
+      <span id="ts"></span>
+    </div>
+    <table id="tbl" style="margin-top: 12px;">
+      <thead>
+        <tr>
+          <th>Server</th>
+          <th class="num">Trust</th>
+          <th>Verdict</th>
+          <th class="num">Receipts</th>
+          <th>Flags</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="5" class="mono" style="color: var(--muted);">fetching…</td></tr>
+      </tbody>
+    </table>
+
+    <h2>How these scores get used</h2>
+    <p>The <code>xaip-claude-hook</code> fetches this API before every MCP tool call. If a server scores below the caution threshold, you see inline in Claude:</p>
+    <pre><code>⚠ XAIP: "fetch" trust=0.38 (low_trust, 40 receipts)
+        Risk: high_error_rate</code></pre>
+    <p>After each call, the hook signs a receipt (hashes only — no raw content leaves your machine) and posts it to the aggregator. Next caller sees a slightly more accurate score.</p>
+    <p>For programmatic decision-making across candidate servers (e.g. "pick the highest-trust server that can handle task X"), that logic lives in a sibling project — <a href="https://www.npmjs.com/package/veridict">Veridict</a> — which consumes XAIP scores as one of its inputs. XAIP is the data layer; Veridict is the decision layer.</p>
+
+    <div class="disclosure">
+      <strong>Known limitations.</strong> ~1,500 receipts across 10 servers — a small dataset. A single aggregator node (BFT quorum is the next milestone). The <code>low_caller_diversity</code> flag means <em>one caller dominates the dataset — trust is uncertain because there aren't enough independent sources yet</em>. Right now that caller is me, and closing that gap is exactly what installers are for. Error classification is heuristic; false positives possible.
+    </div>
+
+    <h2>How to contribute</h2>
+    <p>The easiest way: install the Claude Code hook. Before each MCP tool call it fetches the score and warns inline if low; after each call it posts a signed receipt to the public aggregator.</p>
+    <pre><code>npm install -g xaip-claude-hook &amp;&amp; xaip-claude-hook install</code></pre>
+    <p>Or run your own aggregator node — the <a href="https://github.com/xkumakichi/xaip-protocol">spec and reference implementation</a> are MIT-licensed with zero runtime dependencies.</p>
+
+    <footer>
+      <a href="https://github.com/xkumakichi/xaip-protocol">GitHub</a>
+      <a href="https://www.npmjs.com/package/xaip-claude-hook">npm</a>
+      <a href="https://dev.to/xkumakichi/what-the-agent-stack-is-still-missing-3hcn">dev.to: What the agent stack is still missing</a>
+      <a href="https://dev.to/xkumakichi/a-claude-code-hook-that-warns-you-before-calling-a-low-trust-mcp-server-ckk">dev.to: Claude Code hook walkthrough</a>
+    </footer>
+  </main>
+
+  <script>
+    const API = "https://xaip-trust-api.kuma-github.workers.dev/v1/servers";
+    const dot = document.getElementById("dot");
+    const status = document.getElementById("status");
+    const ts = document.getElementById("ts");
+    const rows = document.getElementById("rows");
+
+    function setErr(msg) {
+      dot.style.background = "var(--low)";
+      dot.style.boxShadow = "0 0 6px var(--low)";
+      status.textContent = msg;
+      status.className = "err";
+    }
+    let lastUpdate = null;
+    function formatAgo(d) {
+      const s = Math.max(0, Math.round((Date.now() - d.getTime()) / 1000));
+      if (s < 60) return `updated ${s}s ago`;
+      const m = Math.round(s / 60);
+      if (m < 60) return `updated ${m}m ago`;
+      const h = Math.round(m / 60);
+      return `updated ${h}h ago`;
+    }
+    function setOk(count, timestamp) {
+      dot.style.background = "var(--trusted)";
+      dot.style.boxShadow = "0 0 6px var(--trusted)";
+      status.className = "";
+      status.textContent = `live · ${count} servers`;
+      lastUpdate = new Date(timestamp);
+      ts.textContent = formatAgo(lastUpdate);
+    }
+    function render(servers) {
+      const sorted = servers.slice().sort((a, b) => b.trust - a.trust);
+      rows.innerHTML = sorted.map(s => {
+        const flags = (s.riskFlags || []).map(f => `<span class="flag">${f}</span>`).join(" ") || "—";
+        return `<tr>
+          <td>${s.slug}</td>
+          <td class="num">${s.trust.toFixed(3)}</td>
+          <td class="verdict ${s.verdict}">${s.verdict}</td>
+          <td class="num">${s.receipts}</td>
+          <td>${flags}</td>
+        </tr>`;
+      }).join("");
+    }
+    async function tick() {
+      try {
+        const r = await fetch(API, { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        render(data.servers || []);
+        setOk(data.count || (data.servers || []).length, data.timestamp || new Date().toISOString());
+      } catch (e) {
+        setErr("error: " + e.message);
+      }
+    }
+    tick();
+    setInterval(tick, 30000);
+    setInterval(() => { if (lastUpdate) ts.textContent = formatAgo(lastUpdate); }, 1000);
+  </script>
+</body>
+</html>
