@@ -124,14 +124,34 @@
     <p>After each call, the hook signs a receipt (hashes only — no raw content leaves your machine) and posts it to the aggregator. Next caller sees a slightly more accurate score.</p>
     <p>For programmatic decision-making across candidate servers (e.g. "pick the highest-trust server that can handle task X"), that logic lives in a sibling project — <a href="https://www.npmjs.com/package/veridict">Veridict</a> — which consumes XAIP scores as one of its inputs. XAIP is the data layer; Veridict is the decision layer.</p>
 
+    <h2>v0.5 — in review</h2>
+    <p>The current live scoring is v0.4. A release candidate for v0.5 is open for review; it adds a <strong>tool class taxonomy</strong> so the trust model can treat different kinds of tools appropriately rather than scoring them with one metric:</p>
+    <ul>
+      <li><code>advisory</code> — suggestions, no external effect</li>
+      <li><code>data-retrieval</code> — read-only lookups</li>
+      <li><code>computation</code> — pure functions over inputs</li>
+      <li><code>mutation</code> — writes to external state</li>
+      <li><code>settlement</code> — on-chain or otherwise independently anchored effects</li>
+    </ul>
+    <p>For settlement-class tools, the receipt carries an <code>anchorTxHash</code> that a reviewer can re-verify on the settlement layer, turning trust from aggregate statistics into cryptographic proof of the declared side-effect. A concrete demo anchors a receipt to an <a href="https://testnet.xrpl.org/transactions/63F24BBF303A8E8510F2C5B91EFEB8F34CCFB4A2BC10750ABD392BE606D553BC">XRPL testnet transaction</a> — source in <a href="https://github.com/xkumakichi/xaip-protocol/tree/main/demo/settlement-demo">demo/settlement-demo</a>.</p>
+    <p>The RC itself is at <a href="https://github.com/xkumakichi/xaip-protocol/blob/main/XAIP-SPEC-v0.5-DRAFT.md">XAIP-SPEC-v0.5-DRAFT.md</a>. The aggregator does not yet apply class-aware scoring; that is a separate milestone.</p>
+
     <div class="disclosure">
-      <strong>Known limitations.</strong> ~1,500 receipts across 10 servers — a small dataset. A single aggregator node (BFT quorum is the next milestone). The <code>low_caller_diversity</code> flag means <em>one caller dominates the dataset — trust is uncertain because there aren't enough independent sources yet</em>. Right now that caller is me, and closing that gap is exactly what installers are for. Error classification is heuristic; false positives possible.
+      <strong>Known limitations.</strong> ~2,600 receipts across 10 servers — still a small dataset. A single aggregator node (BFT quorum is the next milestone). The <code>low_caller_diversity</code> flag means <em>one caller dominates the dataset — trust is uncertain because there aren't enough independent sources yet</em>. The multi-caller mechanism itself has been verified (<a href="https://github.com/xkumakichi/xaip-protocol/blob/main/docs/contributor/caller-diversity-verification.md">method + before/after data</a>), but in practice the active graph is still populated mostly by one operator. Closing that gap is what the contributor paths below are for. Error classification is heuristic; false positives possible.
     </div>
 
     <h2>How to contribute</h2>
-    <p>The easiest way: install the Claude Code hook. Before each MCP tool call it fetches the score and warns inline if low; after each call it posts a signed receipt to the public aggregator.</p>
+    <p>Adding one more independent caller to the graph is the single most useful thing someone outside this repo can do. There are three paths, from shortest to most involved:</p>
+
+    <p><strong>One-off run (≈30 seconds, no clone, no signup):</strong></p>
+    <pre><code>npx xaip-caller</code></pre>
+    <p>Generates an Ed25519 caller key on first run, makes five real HTTP tool calls (GitHub API, httpbin, this project's own trust API), signs an execution receipt for each, POSTs them to the aggregator, and exits. No state outside <code>~/.xaip/caller-keys.json</code>. Source: <a href="https://github.com/xkumakichi/xaip-protocol/tree/main/clients/caller">clients/caller</a>.</p>
+
+    <p><strong>Continuous contribution via Claude Code:</strong></p>
     <pre><code>npm install -g xaip-claude-hook &amp;&amp; xaip-claude-hook install</code></pre>
-    <p>Or run your own aggregator node — the <a href="https://github.com/xkumakichi/xaip-protocol">spec and reference implementation</a> are MIT-licensed with zero runtime dependencies.</p>
+    <p>Before each MCP tool call the hook fetches the current score and warns inline if low; after each call it posts a signed receipt.</p>
+
+    <p><strong>Full contributor path (real MCP servers, ~5 minutes):</strong> see <a href="https://github.com/xkumakichi/xaip-protocol/blob/main/docs/contributor/run-a-caller.md">run-a-caller.md</a>. Or run your own aggregator node — the <a href="https://github.com/xkumakichi/xaip-protocol">spec and reference implementation</a> are MIT-licensed.</p>
 
     <footer>
       <a href="https://github.com/xkumakichi/xaip-protocol">GitHub</a>

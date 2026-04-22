@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "demo", "-l", "3000", "--no-clipboard"],
       "port": 3000
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "docs", "-l", "3001", "--no-clipboard"],
+      "port": 3001
     }
   ]
 }
