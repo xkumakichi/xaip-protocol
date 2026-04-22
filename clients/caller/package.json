@@ -1,0 +1,48 @@
+{
+  "name": "xaip-caller",
+  "version": "0.1.0",
+  "description": "Zero-install CLI to contribute to the XAIP trust graph — real HTTP tool calls, signed receipts, one command.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "xaip-caller": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "node scripts/add-shebang.cjs",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "xaip",
+    "trust",
+    "ai-agent",
+    "caller",
+    "receipt",
+    "ed25519",
+    "reputation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xkumakichi/xaip-protocol",
+    "directory": "clients/caller"
+  },
+  "homepage": "https://github.com/xkumakichi/xaip-protocol/tree/main/clients/caller",
+  "bugs": {
+    "url": "https://github.com/xkumakichi/xaip-protocol/issues"
+  },
+  "author": "xkumakichi",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

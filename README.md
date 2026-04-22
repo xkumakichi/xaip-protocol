@@ -79,9 +79,21 @@ This demo:
 3. Submits a signed execution receipt to the Aggregator
 4. Shows the updated trust score
 
-### Become an independent caller (5 min, no signup)
+### Become an independent caller
 
-Want the trust graph to depend on more than one operator? Run a caller yourself. No account, no approval, no API key — the aggregator verifies signatures from any valid keypair. See [docs/contributor/run-a-caller.md](./docs/contributor/run-a-caller.md).
+Want the trust graph to depend on more than one operator? Run a caller yourself. No account, no approval, no API key — the aggregator verifies signatures from any valid keypair.
+
+**Fastest — zero-install, 30 seconds:**
+
+```bash
+npx xaip-caller
+```
+
+Signs receipts for a handful of real HTTP tool calls and POSTs them. Demonstrates that XAIP works beyond MCP — any HTTP tool can participate. See [clients/caller](./clients/caller/).
+
+**Full path — MCP servers, 5 minutes:**
+
+Clone the repo and run the auto-collector against real MCP servers. Your caller DID contributes to the diversity of every scored MCP tool. See [docs/contributor/run-a-caller.md](./docs/contributor/run-a-caller.md).
 
 ### Use the SDK
 
@@ -253,7 +265,8 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 - [x] v0.5 RC: tool class taxonomy + class-aware risk evaluation (advisory / data-retrieval / computation / mutation / settlement)
 - [x] Multi-caller diversity mechanism verified ([2+ caller identities, metric responds across 8 servers](./docs/contributor/caller-diversity-verification.md))
 - [ ] Aggregator implementation of v0.5 class-aware scoring
-- [ ] External operator callers (mechanism live, external adoption pending — [run one yourself](./docs/contributor/run-a-caller.md))
+- [x] Zero-install caller path: [`npx xaip-caller`](./clients/caller/) (30-second first contribution, demonstrates XAIP beyond MCP)
+- [ ] External operator callers (mechanism live, external adoption pending — run `npx xaip-caller` or the [full guide](./docs/contributor/run-a-caller.md))
 
 ## Writing
 
@@ -261,6 +274,7 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 
 ## Related
 
+- [xaip-caller](./clients/caller/) — zero-install CLI: `npx xaip-caller` to contribute to the trust graph
 - [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust) — MCP server for AI agents to check trust scores
 - [xaip-langchain](https://www.npmjs.com/package/xaip-langchain) — LangChain.js callback handler that emits XAIP receipts
 - [xaip-openai](https://www.npmjs.com/package/xaip-openai) — OpenAI tool-calling wrapper with signed receipts
