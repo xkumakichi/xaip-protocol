@@ -245,14 +245,15 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 - [x] Aggregator with BFT federation (Cloudflare D1)
 - [x] Ed25519 receipt signing + verification
 - [x] Bayesian trust model with caller diversity
-- [x] 10 MCP servers scored (2,100+ executions)
+- [x] 10 MCP servers scored (2,600+ executions)
 - [x] Automated daily data collection (GitHub Actions)
 - [x] Provider-neutral integrations: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
 - [x] v0.5 RC: tool class taxonomy + class-aware risk evaluation (advisory / data-retrieval / computation / mutation / settlement)
+- [x] Multi-caller diversity mechanism verified ([2+ caller identities, metric responds across 8 servers](./docs/contributor/caller-diversity-verification.md))
 - [ ] Aggregator implementation of v0.5 class-aware scoring
-- [ ] Multi-user caller diversity (currently single-operator)
+- [ ] External operator callers (mechanism live, external adoption pending — [run one yourself](./docs/contributor/run-a-caller.md))
 
 ## Writing
 

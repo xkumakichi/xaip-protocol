@@ -23,7 +23,9 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const AGGREGATOR_URL =
   process.env.AGGREGATOR_URL ??
   "https://xaip-aggregator.kuma-github.workers.dev";
-const KEYS_FILE = path.join(os.homedir(), ".xaip", "agent-keys.json");
+const KEYS_FILE =
+  process.env.XAIP_KEYS_FILE ??
+  path.join(os.homedir(), ".xaip", "agent-keys.json");
 const NPX = process.platform === "win32" ? "npx.cmd" : "npx";
 const CONNECT_TIMEOUT_MS = 15_000;
 const CALL_TIMEOUT_MS = 15_000;
