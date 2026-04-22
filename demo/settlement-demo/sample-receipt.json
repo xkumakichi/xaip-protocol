@@ -1,0 +1,23 @@
+{
+  "agentDid": "did:key:d5d2280075b2d59e98a742f6ad857e205e5269d9603776f7fff7e8a529460978",
+  "callerDid": "did:key:01ea2e7c9f05e00ebccc531dbab6f679ca0826ff896d5fb0f6c95ea6e9a576cb",
+  "toolName": "settlement-demo/xrp-transfer",
+  "taskHash": "eb446790694ed85c",
+  "resultHash": "de08ed9c920f7928",
+  "success": true,
+  "latencyMs": 5689,
+  "timestamp": "2026-04-22T10:45:37.609Z",
+  "toolMetadata": {
+    "xaip": {
+      "class": "settlement",
+      "settlementLayer": "xrpl-testnet",
+      "verifiabilityHint": "anchored",
+      "anchorTxHash": "63F24BBF303A8E8510F2C5B91EFEB8F34CCFB4A2BC10750ABD392BE606D553BC",
+      "anchorLedgerIndex": 16751127
+    }
+  },
+  "signature": "5c1fdcc552f5ae5151a3f1d499eb6b565e874a548308b31f0a793be6bba488b5fb2c83df946d8b8d1e74fdc0446cec89532fa33481d1142616738038bd38530d",
+  "callerSignature": "5ba36e624af3eef17877b74182a88d867e031859810e14d63ea00910f5b0e6f441d282b6914e3c74945fd1129ad0f2a82e143ba401d4dd40ef61237b2580d703",
+  "agentPublicKey": "302a300506032b6570032100d5d2280075b2d59e98a742f6ad857e205e5269d9603776f7fff7e8a529460978",
+  "callerPublicKey": "302a300506032b657003210001ea2e7c9f05e00ebccc531dbab6f679ca0826ff896d5fb0f6c95ea6e9a576cb"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "xaip-settlement-demo",
+  "version": "0.1.0",
+  "description": "XAIP v0.5 settlement-class demo — anchors a tool execution receipt to an XRPL testnet transaction",
+  "private": true,
+  "scripts": {
+    "start": "npx tsx demo.ts"
+  },
+  "dependencies": {
+    "xrpl": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
