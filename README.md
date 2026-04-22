@@ -234,7 +234,7 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 
 ## Status
 
-**v0.4.0** — Live infrastructure, 10 servers scored
+**v0.4.0** live; **v0.5 Release Candidate** open for review (adds tool class taxonomy with settlement-layer support).
 
 - [x] Trust Score API (Cloudflare Worker, live)
 - [x] Decision Engine (`POST /v1/select`)
@@ -243,17 +243,25 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 - [x] Bayesian trust model with caller diversity
 - [x] 10 MCP servers scored (2,100+ executions)
 - [x] Automated daily data collection (GitHub Actions)
+- [x] Provider-neutral integrations: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
+- [x] v0.5 RC: tool class taxonomy + class-aware risk evaluation (advisory / data-retrieval / computation / mutation / settlement)
+- [ ] Aggregator implementation of v0.5 class-aware scoring
 - [ ] Multi-user caller diversity (currently single-operator)
-- [ ] Platform integrations (Smithery, Glama)
-- [ ] Web dashboard
+
+## Writing
+
+- **Portable Trust** — why trust infrastructure for AI agents must be provider-neutral and behavior-derived ([dev.to](https://dev.to/xkumakichi/portable-trust-o4o) · [Zenn 日本語版](https://zenn.dev/xkumakichi/articles/e93a438265a682))
 
 ## Related
 
 - [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust) — MCP server for AI agents to check trust scores
+- [xaip-langchain](https://www.npmjs.com/package/xaip-langchain) — LangChain.js callback handler that emits XAIP receipts
+- [xaip-openai](https://www.npmjs.com/package/xaip-openai) — OpenAI tool-calling wrapper with signed receipts
 - [Veridict](https://github.com/xkumakichi/veridict) — AI agent trust decision layer (runtime monitoring)
-- [XAIP Specification](./XAIP-SPEC-v0.1.md) — Full protocol specification
+- [XAIP Specification v0.4](./XAIP-SPEC.md) — Current protocol specification
+- [XAIP Specification v0.5 RC](./XAIP-SPEC-v0.5-DRAFT.md) — Release candidate (tool class taxonomy)
 
 ## License
 
