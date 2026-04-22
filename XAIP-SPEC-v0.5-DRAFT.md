@@ -1,8 +1,8 @@
-# XAIP Protocol Specification v0.5 (DRAFT)
+# XAIP Protocol Specification v0.5 (Release Candidate)
 
-**Status:** Draft — subject to change
+**Status:** Release Candidate — open for review, no known blockers
 **Authors:** xkumakichi
-**Date:** 2026-04-21
+**Date:** 2026-04-22
 **License:** MIT
 
 > This is a delta document over [XAIP-SPEC.md](./XAIP-SPEC.md) (v0.4.0). Sections that are unchanged are referenced, not repeated. v0.5 is additive: a v0.4 implementation that ignores the v0.5 fields remains conformant for v0.4.
@@ -108,7 +108,96 @@ Where `settlementVerifiability` is computed from the `verifiabilityHint`:
 | `attestable` | 0.85 (receipts can be verified on demand but not by default) |
 | `none` | fallback to `callerDiversity` |
 
-Aggregators SHOULD attempt periodic anchor verification for `anchored` settlement tools. Verified anchors increase confidence; mismatched anchors trigger a `settlement_anchor_mismatch` flag (out of scope for this draft, planned v0.6).
+**Anchor verification is not optional for `anchored` tools.** Aggregators SHOULD sample-verify at least **5% of receipts** (or 1 per hour per tool, whichever is greater) against the declared `settlementLayer`. Mismatches — receipt claims a transaction that does not exist on the layer, or whose content differs — MUST trigger a `settlement_anchor_mismatch` flag and MUST reduce `settlementVerifiability` to `0` for that tool until the discrepancy is resolved.
+
+This is the defence against the obvious attack: a tool self-declaring `verifiabilityHint: "anchored"` to inflate its trust score without actually anchoring anything. Self-declaration is cheap; periodic verification removes the incentive.
+
+---
+
+## §10.5 Class Metadata Transport
+
+Class metadata (`xaip.class`, `xaip.secondaryClasses`, `xaip.settlementLayer`, `xaip.verifiabilityHint`) reaches aggregators through **two complementary channels**. No centralized registry is used, by design: a registry is itself a single gatekeeper, which is exactly the failure mode this protocol aims to avoid.
+
+### 10.5.1 Inline (REQUIRED default)
+
+Receipt producers MUST embed class metadata in the receipt's `toolMetadata` field when the tool's manifest declares it:
+
+```json
+{
+  "agentDid": "did:key:z6Mk...",
+  "callerDid": "did:key:z6Mk...",
+  "toolName": "xrpl-payment/send",
+  "toolMetadata": {
+    "xaip": {
+      "class": "settlement",
+      "settlementLayer": "xrpl-mainnet",
+      "verifiabilityHint": "anchored"
+    }
+  },
+  "taskHash": "...",
+  "resultHash": "...",
+  "success": true,
+  "latencyMs": 1204,
+  "timestamp": "2026-04-22T10:00:00Z"
+}
+```
+
+`toolMetadata` is part of the signed payload. A tool CANNOT silently downgrade its class to avoid evaluation scrutiny: the receipt is co-signed by the caller, who can reject mis-declarations.
+
+Size overhead is small (typical: 40–120 bytes per receipt) and scales with receipts, not with tool count.
+
+### 10.5.2 Well-Known Endpoint (OPTIONAL supplement)
+
+A server MAY publish a well-known manifest at:
+
+```
+GET https://<server>/.well-known/xaip-manifest.json
+```
+
+Returning:
+
+```json
+{
+  "tools": {
+    "send": { "class": "settlement", "settlementLayer": "xrpl-mainnet", "verifiabilityHint": "anchored" },
+    "get_balance": { "class": "data-retrieval" }
+  }
+}
+```
+
+Aggregators MAY fetch this out-of-band to pre-populate or cross-check class metadata. When inline and well-known disagree, the **inline receipt metadata wins** (it is per-call and signed; the endpoint is a static hint).
+
+### 10.5.3 Why No Registry
+
+A centralized registry of tool classes would:
+
+1. Introduce a single gatekeeper whose curation decisions become load-bearing inputs to every downstream trust computation.
+2. Create an attack surface (inject/remove entries to bias evaluation).
+3. Contradict the portability guarantee: a tool whose author loses registry access cannot carry class metadata with them.
+
+Inline-plus-well-known is the decentralized alternative. Both are under the tool author's control; neither requires cooperation from a third party.
+
+---
+
+## §10.6 Class Disputes and Multi-Class Tools
+
+### 10.6.1 Authority
+
+The **server manifest** (well-known endpoint, or the `toolMetadata` that a server-side receipt producer emits) is authoritative for the tool's primary class.
+
+- Callers MAY annotate their receipts with a `callerSuggestedClass` field for aggregator awareness.
+- Callers MUST NOT override the server's declared `class`. An aggregator receiving a caller override MUST ignore it and log a divergence event.
+
+Rationale: the tool author knows what their tool does; external annotation is a hint, not a source of truth. This also prevents adversarial callers from forcing class reassignment to game the risk-flag table.
+
+### 10.6.2 Multi-Class Tools
+
+A tool that spans classes (e.g., writes to a database AND emits a settlement transaction) declares:
+
+- **One `class`**: the primary class. This determines the risk flag table (§10.3) and score composition (§10.4).
+- **Zero or more `secondaryClasses`**: for human-facing description and discovery. Aggregators MUST NOT derive risk-flag behaviour from `secondaryClasses`.
+
+The primary class SHOULD be the one with the highest-stakes failure mode. For a tool that writes to both a local DB and XRPL, `settlement` is primary; `mutation` is secondary.
 
 ---
 
@@ -129,23 +218,16 @@ Receipts produced by any conformant producer are interchangeable at the aggregat
 
 In addition to v0.4 §9 conformance items, a v0.5-conformant aggregator:
 
-1. Accepts and stores the optional `xaip.class` and `xaip.verifiabilityHint` fields when present in receipts (carried via `toolMetadata`, schema TBD in §13).
+1. Accepts and stores the optional `xaip.class`, `xaip.secondaryClasses`, `xaip.settlementLayer`, and `xaip.verifiabilityHint` fields when present in receipts, carried via `toolMetadata` as defined in §10.5.
 2. Applies the class-aware risk flag table (§10.3) when computing `riskFlags`.
 3. Substitutes `settlementVerifiability` for `callerDiversity` when `class == "settlement"` (§10.4).
-4. Treats absent `xaip.class` as `advisory` (backwards compatibility).
+4. Samples and verifies anchored receipts per §10.4, and exposes `settlement_anchor_mismatch` as a risk flag when anchors diverge.
+5. Treats absent `xaip.class` as `advisory` (backwards compatibility).
+6. Ignores any `callerSuggestedClass` that conflicts with the server's declared `class` (§10.6.1) and logs the divergence.
 
 ---
 
-## §13. Open Questions (To Resolve Before v0.5 Final)
-
-1. **How does class metadata reach the aggregator?** Options: (a) carried inside each receipt as `toolMetadata`, (b) registered ahead-of-time per `agentDid+toolName`, (c) discovered via well-known endpoint on the server. Trade-offs: (a) is simplest but adds bytes; (b) requires registry; (c) requires server cooperation.
-2. **Is `verifiabilityHint: anchored` self-declarable?** A malicious settlement tool could declare `anchored` to inflate trust. Mitigation: aggregators SHOULD periodically verify a sample of anchored receipts against the declared `settlementLayer`.
-3. **Class disputes.** What if two callers disagree on a tool's class? Likely resolution: server's manifest is authoritative; callers MAY annotate but MAY NOT override.
-4. **Multi-class tools.** A tool that both writes to a database AND emits a settlement transaction — how is that scored? Proposed: primary class determines risk flag table; secondary classes inform the human-facing description only.
-
----
-
-## §14. Migration from v0.4
+## §13. Migration from v0.4
 
 v0.4 implementations remain conformant for v0.4 indefinitely. To upgrade to v0.5:
 
