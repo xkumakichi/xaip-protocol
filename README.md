@@ -79,6 +79,10 @@ This demo:
 3. Submits a signed execution receipt to the Aggregator
 4. Shows the updated trust score
 
+### Become an independent caller (5 min, no signup)
+
+Want the trust graph to depend on more than one operator? Run a caller yourself. No account, no approval, no API key — the aggregator verifies signatures from any valid keypair. See [docs/contributor/run-a-caller.md](./docs/contributor/run-a-caller.md).
+
 ### Use the SDK
 
 ```bash
