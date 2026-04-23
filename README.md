@@ -30,7 +30,7 @@ The `/v1/select` response tells you which server to use, why, and what would hap
 ```json
 {
   "selected": "context7",
-  "reason": "Highest trust (1) from 248 verified executions",
+  "reason": "Highest trust among scored candidates based on current verified receipts",
   "rejected": [{ "slug": "unknown-server", "reason": "unscored — no execution data" }],
   "withoutXAIP": "Random selection would pick an unscored server 33% of the time — no execution data, no safety guarantee"
 }
@@ -204,7 +204,7 @@ npm: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - Bayesian Beta distribution (prior varies by DID method)
 - Caller diversity weighting (prevents single-caller gaming)
 - Co-signature factor (dual Ed25519: agent + caller)
-- BFT federation with MAD outlier detection across aggregator nodes
+- BFT-capable federation with MAD outlier detection across aggregator nodes; the current public deployment is a single aggregator (`quorum:1`)
 
 **Infrastructure:**
 - Cloudflare Workers (global edge, <50ms latency)
@@ -227,10 +227,9 @@ XRPL's native DID support (XLS-40) makes it a natural foundation for agent ident
 
 Trust scores are computed from real execution data, not synthetic benchmarks:
 
-- **2,100+** verified tool-call executions
-- **10** MCP servers scored: context7, sequential-thinking, memory, filesystem, everything, fetch, sqlite, git, puppeteer, playwright
+- **~2,600** signed receipts across **10** scored MCP servers as of 2026-04-24: context7, sequential-thinking, memory, filesystem, everything, fetch, sqlite, git, puppeteer, playwright
 - Automated daily data collection via GitHub Actions
-- Scores update with every new execution receipt
+- Scores update with every new execution receipt; see the live dashboard/API for current values
 
 ```bash
 # See all scored servers
@@ -241,9 +240,9 @@ curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
 
 | Provider | Status | How |
 |---|---|---|
-| **MCP** (Model Context Protocol) | ✅ live | `xaip-claude-hook` for Claude Code; `xaip-sdk` for any MCP client; 10 servers scored, 2,100+ receipts |
-| **LangChain** | 🛠 planned (v0.5) | `xaip-langchain` wrapper around `BaseTool` |
-| **OpenAI tool calling** | 🛠 planned (v0.5) | `xaip-openai` wrapper for `tools` parameter |
+| **MCP** (Model Context Protocol) | ✅ live | `xaip-claude-hook` for Claude Code; `xaip-sdk` for any MCP client; 10 servers scored, ~2,600 signed receipts as of 2026-04-24 |
+| **LangChain** | ✅ published preview | `xaip-langchain` receipt producer for LangChain.js tool calls |
+| **OpenAI tool calling** | ✅ published preview | `xaip-openai` receipt producer for OpenAI-compatible tool-call loops |
 | **A2A / proprietary** | ✅ supported | Use `xaip-sdk` directly — receipt format is provider-neutral |
 
 The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid`, `taskHash`, `resultHash`, `success`, `latencyMs`, `failureType`, `timestamp`. Any agent framework that can hash inputs/outputs and sign with Ed25519 can contribute receipts.
@@ -254,12 +253,12 @@ The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid
 
 - [x] Trust Score API (Cloudflare Worker, live)
 - [x] Decision Engine (`POST /v1/select`)
-- [x] Aggregator with BFT federation (Cloudflare D1)
+- [x] Aggregator with BFT-capable federation support (public deployment currently single aggregator / `quorum:1`)
 - [x] Ed25519 receipt signing + verification
 - [x] Bayesian trust model with caller diversity
-- [x] 10 MCP servers scored (2,600+ executions)
+- [x] ~2,600 signed receipts across 10 scored MCP servers as of 2026-04-24
 - [x] Automated daily data collection (GitHub Actions)
-- [x] Provider-neutral integrations: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
+- [x] Published preview receipt producers: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
 - [x] v0.5 RC: tool class taxonomy + class-aware risk evaluation (advisory / data-retrieval / computation / mutation / settlement)

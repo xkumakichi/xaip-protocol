@@ -206,8 +206,8 @@ The primary class SHOULD be the one with the highest-stakes failure mode. For a 
 The receipt schema (v0.4 §2.2) is independent of the agent framework that produced the call. v0.5 makes explicit that conformant receipt producers exist for:
 
 - **MCP clients** (reference: `xaip-claude-hook`, `xaip-sdk` middleware) — captures `mcp__<server>__<tool>` tool calls
-- **LangChain** (planned: `xaip-langchain`) — wraps `BaseTool` / `StructuredTool` `_call()` invocations
-- **OpenAI tool calling** (planned: `xaip-openai`) — wraps the `tools` parameter in chat completions
+- **LangChain** (published preview: `xaip-langchain`) — emits XAIP receipts from LangChain.js tool calls
+- **OpenAI tool calling** (published preview: `xaip-openai`) — emits XAIP receipts from OpenAI-compatible tool-call loops
 - **A2A / proprietary** — direct use of `xaip-sdk`'s `signReceipt(...)` and `postReceipt(...)`
 
 Receipts produced by any conformant producer are interchangeable at the aggregator. The `toolName` field MAY include a framework prefix (e.g., `mcp:context7/get_docs`, `lc:DocSearchTool`, `oai:web_search`) but this is convention, not normative.
