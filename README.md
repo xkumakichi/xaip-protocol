@@ -89,6 +89,7 @@ npm run blind-vs-xaip
 ```
 
 This is a deterministic local replay. It does not perform live tool execution, post receipts, or call any external API.
+See [docs/blind-vs-xaip-demo.md](./docs/blind-vs-xaip-demo.md) for scope, metrics, and limitations.
 
 In the included snapshot replay:
 
