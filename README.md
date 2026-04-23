@@ -247,6 +247,8 @@ curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
 
 The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid`, `taskHash`, `resultHash`, `success`, `latencyMs`, `failureType`, `timestamp`. Any agent framework that can hash inputs/outputs and sign with Ed25519 can contribute receipts.
 
+See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the provider-neutral receipt flow.
+
 ## Status
 
 **v0.4.0** live; **v0.5 Release Candidate** open for review (adds tool class taxonomy with settlement-layer support).
