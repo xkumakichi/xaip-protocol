@@ -6,7 +6,8 @@
   "scripts": {
     "start": "npx tsx demo.ts",
     "federation": "npx tsx federation.ts",
-    "veridict": "npx tsx veridict-loop.ts"
+    "veridict": "npx tsx veridict-loop.ts",
+    "blind-vs-xaip": "npx tsx blind-vs-xaip.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

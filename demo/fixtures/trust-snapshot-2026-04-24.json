@@ -1,0 +1,98 @@
+{
+  "snapshotDate": "2026-04-24",
+  "source": "https://xaip-trust-api.kuma-github.workers.dev/v1/servers",
+  "capturedAt": "2026-04-23T23:22:29.422Z",
+  "note": "Static snapshot of the public XAIP trust API. The current public dataset is MCP-heavy because MCP was the first integration target.",
+  "servers": [
+    {
+      "slug": "git",
+      "trust": 0.873,
+      "verdict": "trusted",
+      "receipts": 60,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.422Z"
+    },
+    {
+      "slug": "memory",
+      "trust": 0.872,
+      "verdict": "trusted",
+      "receipts": 142,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.418Z"
+    },
+    {
+      "slug": "sqlite",
+      "trust": 0.842,
+      "verdict": "trusted",
+      "receipts": 72,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.420Z"
+    },
+    {
+      "slug": "everything",
+      "trust": 0.803,
+      "verdict": "trusted",
+      "receipts": 75,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.422Z"
+    },
+    {
+      "slug": "puppeteer",
+      "trust": 0.671,
+      "verdict": "caution",
+      "receipts": 32,
+      "riskFlags": ["high_error_rate"],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.419Z"
+    },
+    {
+      "slug": "context7",
+      "trust": 0.654,
+      "verdict": "caution",
+      "receipts": 585,
+      "riskFlags": ["declining_performance"],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.420Z"
+    },
+    {
+      "slug": "sequential-thinking",
+      "trust": 0.652,
+      "verdict": "caution",
+      "receipts": 870,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.419Z"
+    },
+    {
+      "slug": "filesystem",
+      "trust": 0.625,
+      "verdict": "caution",
+      "receipts": 630,
+      "riskFlags": [],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.421Z"
+    },
+    {
+      "slug": "fetch",
+      "trust": 0.428,
+      "verdict": "caution",
+      "receipts": 56,
+      "riskFlags": ["high_error_rate"],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.419Z"
+    },
+    {
+      "slug": "playwright",
+      "trust": 0.394,
+      "verdict": "low_trust",
+      "receipts": 37,
+      "riskFlags": ["high_error_rate"],
+      "source": "xaip-aggregator-1 (quorum:1)",
+      "timestamp": "2026-04-23T23:22:29.419Z"
+    }
+  ]
+}

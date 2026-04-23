@@ -1,0 +1,47 @@
+{
+  "note": "Each scenario uses the same candidate set for every strategy. Candidates are treated as upstream planner-provided options; this demo compares trust-data selection only.",
+  "scenarios": [
+    {
+      "id": "docs_lookup",
+      "task": "Fetch React hooks documentation",
+      "purpose": "Includes one unscored candidate before three scored documentation or context-related candidates.",
+      "candidates": ["unknown-docs-server", "context7", "sequential-thinking", "filesystem"]
+    },
+    {
+      "id": "browser_automation",
+      "task": "Run a browser automation task",
+      "purpose": "Includes a low-trust scored candidate, a caution candidate, an unscored candidate, and a fallback scored candidate.",
+      "candidates": ["playwright", "puppeteer", "unknown-browser-tool", "fetch"]
+    },
+    {
+      "id": "repo_context",
+      "task": "Inspect repository context and recent changes",
+      "purpose": "Places an unscored repository-related candidate before scored repository and context candidates.",
+      "candidates": ["unknown-git-helper", "git", "filesystem", "memory"]
+    },
+    {
+      "id": "structured_storage",
+      "task": "Store and query structured state",
+      "purpose": "Compares an unscored storage-like candidate with scored storage and state-management candidates.",
+      "candidates": ["unknown-sql-store", "sqlite", "memory", "filesystem"]
+    },
+    {
+      "id": "general_tool_choice",
+      "task": "Choose a general tool execution candidate",
+      "purpose": "Mixes a high-trust general candidate, an unscored candidate, a caution candidate, and a low-trust candidate.",
+      "candidates": ["everything", "unknown-general-tool", "fetch", "playwright"]
+    },
+    {
+      "id": "all_scored_mixed",
+      "task": "Choose among scored candidate tools",
+      "purpose": "Contains only scored candidates with mixed verdicts to separate low-trust avoidance from unscored avoidance.",
+      "candidates": ["playwright", "fetch", "context7", "git"]
+    },
+    {
+      "id": "all_unscored",
+      "task": "Choose an internal private tool",
+      "purpose": "Contains no scored candidates to show that XAIP cannot add trust evidence when the snapshot has none.",
+      "candidates": ["private-tool-alpha", "internal-helper", "legacy-runner"]
+    }
+  ]
+}
