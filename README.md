@@ -79,6 +79,27 @@ This demo:
 3. Submits a signed execution receipt to the Aggregator
 4. Shows the updated trust score
 
+### Decision quality demo
+
+Compare blind selection strategies against XAIP-guided selection using a static trust snapshot and fixed candidate sets:
+
+```bash
+cd demo
+npm run blind-vs-xaip
+```
+
+This is a deterministic local replay. It does not perform live tool execution, post receipts, or call any external API.
+
+In the included snapshot replay:
+
+| Strategy    | Risky pick rate | Eligible pick rate |
+|-------------|----------------:|-------------------:|
+| Random      |           71.4% |              28.6% |
+| Fixed-order |           85.7% |              14.3% |
+| XAIP        |           14.3% |              85.7% |
+
+`risky_pick` = selected candidate was `low_trust` or `unscored` in the snapshot. `fixed-order` models an agent that accepts the upstream planner's candidate order without runtime trust data. The claim is limited to this fixed candidate set and static trust snapshot — not a guarantee of real-world execution improvement.
+
 ### Become an independent caller
 
 Want the trust graph to depend on more than one operator? Run a caller yourself. No account, no approval, no API key — the aggregator verifies signatures from any valid keypair.
