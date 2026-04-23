@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>XAIP — Behavioral Trust Scoring for MCP Servers</title>
-  <meta name="description" content="Live Bayesian trust scores for MCP servers, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
-  <meta property="og:title" content="XAIP — Behavioral Trust Scoring for MCP Servers" />
-  <meta property="og:description" content="Live Bayesian trust scores for MCP servers, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
+  <title>XAIP — Provider-Neutral Trust Layer for AI Tool Execution</title>
+  <meta name="description" content="Provider-neutral trust layer for AI agent tool execution, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
+  <meta property="og:title" content="XAIP — Provider-Neutral Trust Layer for AI Tool Execution" />
+  <meta property="og:description" content="Provider-neutral trust layer for AI agent tool execution, computed from dual-signed Ed25519 receipts. Open protocol, zero-auth API." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <style>
@@ -85,10 +85,10 @@
   <main>
     <header>
       <h1>XAIP Protocol</h1>
-      <p class="tagline">Behavioral trust scoring for MCP servers — open protocol, zero-auth API.</p>
+      <p class="tagline">Provider-neutral trust layer for AI agent tool execution — open protocol, zero-auth API.</p>
     </header>
 
-    <p>When an agent calls a service, a signed transaction proves the call was <em>authorized</em>. It does not prove the call was <em>safe to make</em>. XAIP is one attempt at that missing layer: dual-signed Ed25519 receipts per MCP tool call (hashes only — no raw content leaves your machine), aggregated into a live Bayesian trust score per server.</p>
+    <p>When an agent calls a service, a signed transaction proves the call was <em>authorized</em>. It does not prove the call was <em>safe to make</em>. XAIP is one attempt at that missing layer: dual-signed Ed25519 receipts for AI agent tool execution (hashes only — no raw content leaves your machine), aggregated into a live Bayesian trust score per server. The current public dataset is MCP-heavy because MCP was the first integration target.</p>
 
     <p>Every score below is computed from real receipts and is queryable without auth:</p>
 
@@ -137,7 +137,7 @@
     <p>The RC itself is at <a href="https://github.com/xkumakichi/xaip-protocol/blob/main/XAIP-SPEC-v0.5-DRAFT.md">XAIP-SPEC-v0.5-DRAFT.md</a>. The aggregator does not yet apply class-aware scoring; that is a separate milestone.</p>
 
     <div class="disclosure">
-      <strong>Known limitations.</strong> ~2,600 receipts across 10 servers — still a small dataset. A single aggregator node (BFT quorum is the next milestone). The <code>low_caller_diversity</code> flag means <em>one caller dominates the dataset — trust is uncertain because there aren't enough independent sources yet</em>. The multi-caller mechanism itself has been verified (<a href="https://github.com/xkumakichi/xaip-protocol/blob/main/docs/contributor/caller-diversity-verification.md">method + before/after data</a>), but in practice the active graph is still populated mostly by one operator. Closing that gap is what the contributor paths below are for. Error classification is heuristic; false positives possible.
+      <strong>Known limitations.</strong> ~2,600 receipts across 10 servers — still a small dataset. The current public dataset is MCP-heavy because MCP was the first integration target. A single aggregator node (BFT quorum is the next milestone). The <code>low_caller_diversity</code> flag means <em>one caller dominates the dataset — trust is uncertain because there aren't enough independent sources yet</em>. The multi-caller mechanism itself has been verified (<a href="https://github.com/xkumakichi/xaip-protocol/blob/main/docs/contributor/caller-diversity-verification.md">method + before/after data</a>), but in practice the active graph is still populated mostly by one operator. Closing that gap is what the contributor paths below are for. Error classification is heuristic; false positives possible.
     </div>
 
     <h2>How to contribute</h2>

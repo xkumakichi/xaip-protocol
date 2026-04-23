@@ -6,14 +6,14 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 
 **Provider-agnostic by design.** XAIP is a trust layer for any tool-using agent. The reference implementation and live data start with **MCP** (Model Context Protocol) — because that's where the broadest fleet of public tool servers exists today — but the receipt format, signing, and scoring apply equally to LangChain tools, OpenAI function calling, A2A, and proprietary agent stacks. MCP is the first integration, not the only one.
 
-**Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current trust scores for 10 MCP servers, auto-refreshed, no auth.
+**Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current public trust scores, auto-refreshed, no auth. The current public dataset is MCP-heavy because MCP was the first integration target.
 
 ## Try It Now
 
 The API is live. No signup, no API key.
 
 ```bash
-# Check trust score for an MCP server
+# Check trust score for a scored tool server
 curl https://xaip-trust-api.kuma-github.workers.dev/v1/trust/context7
 
 # Batch query
@@ -56,7 +56,7 @@ XAIP selects the right server on the first try, skips unscored servers, and save
 
 ```
 1. Select    POST /v1/select → picks the best server from candidates
-2. Execute   Your agent calls the selected MCP server
+2. Execute   Your agent calls the selected tool server
 3. Report    POST /receipts → signed execution receipt feeds back into trust scores
 ```
 
@@ -146,7 +146,7 @@ npm: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/v1/servers` | List all scored servers with trust data |
-| `GET` | `/v1/trust/:slug` | Trust score for a single MCP server |
+| `GET` | `/v1/trust/:slug` | Trust score for a single scored server |
 | `GET` | `/v1/trust?slugs=a,b,c` | Batch trust scores (max 50) |
 | `POST` | `/v1/select` | Decision engine — pick best candidate for a task |
 | `GET` | `/health` | Liveness probe |
