@@ -112,6 +112,7 @@ npx xaip-caller
 ```
 
 Signs receipts for a handful of real HTTP tool calls and POSTs them. Demonstrates that XAIP works beyond MCP — any HTTP tool can participate. See [clients/caller](./clients/caller/).
+See [Run xaip-caller](./docs/run-xaip-caller.md) for Windows notes and external receipt contribution details.
 
 **Full path — MCP servers, 5 minutes:**
 
