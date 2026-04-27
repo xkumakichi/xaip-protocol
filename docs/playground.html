@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>XAIP Playground — Trust Before Agent Delegation</title>
+  <meta name="description" content="A read-only XAIP playground showing how trust evidence can change agent tool selection before delegation." />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #10161d;
+      --panel-2: #0f151c;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --accent: #58a6ff;
+      --trusted: #3fb950;
+      --caution: #d29922;
+      --low: #f85149;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 1040px; margin: 0 auto; padding: 48px 20px 80px; }
+    header { margin-bottom: 28px; }
+    h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h2 { font-size: 17px; margin: 34px 0 12px; }
+    h3 { font-size: 14px; margin: 0 0 8px; }
+    p { color: var(--fg); margin: 0 0 12px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: var(--mono); font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td.num { text-align: right; }
+    button, select {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      border-radius: 6px;
+      font: inherit;
+    }
+    select { width: 100%; padding: 9px 10px; }
+    .tagline { color: var(--muted); font-size: 14px; margin: 0; }
+    .lede { max-width: 760px; color: var(--fg); }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr); gap: 16px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .panel.subtle { background: var(--panel-2); }
+    .note {
+      color: var(--muted);
+      font-size: 13.5px;
+      border-left: 2px solid var(--border);
+      padding: 2px 0 2px 12px;
+      margin: 12px 0 20px;
+    }
+    .disclosure {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 18px;
+    }
+    .disclosure strong { color: var(--fg); }
+    .strategy {
+      display: grid;
+      grid-template-columns: 145px minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+    }
+    .strategy:first-child { border-top: 0; padding-top: 0; }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .picked { font-family: var(--mono); font-size: 14px; }
+    .reason { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .candidates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      background: #0d131a;
+    }
+    .chip.trusted { color: var(--trusted); border-color: rgba(63, 185, 80, 0.45); }
+    .chip.caution { color: var(--caution); border-color: rgba(210, 153, 34, 0.45); }
+    .chip.low_trust { color: var(--low); border-color: rgba(248, 81, 73, 0.45); }
+    .verdict { font-weight: 600; }
+    .verdict.trusted { color: var(--trusted); }
+    .verdict.caution { color: var(--caution); }
+    .verdict.low_trust { color: var(--low); }
+    .flag {
+      display: inline-block;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0 4px 4px 0;
+    }
+    .status-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 10px 0 12px;
+      font-family: var(--mono);
+    }
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--trusted);
+      box-shadow: 0 0 6px var(--trusted);
+    }
+    .err { color: var(--low); font-family: var(--mono); font-size: 13px; }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 780px) {
+      main { padding-top: 32px; }
+      .grid { grid-template-columns: 1fr; }
+      table { font-size: 12px; }
+      th, td { padding: 7px 6px; }
+      .strategy { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>XAIP Playground — Trust Before Agent Delegation</h1>
+      <p class="tagline">A read-only browser demo for seeing how historical trust evidence can change an agent's tool choice.</p>
+    </header>
+
+    <section class="lede">
+      <p>AI agents increasingly choose tools, services, and counterparties on your behalf. Today, many of those choices are blind: the agent sees a name and a description, but not much evidence about how that option has behaved before.</p>
+      <p>XAIP adds behavior-derived trust evidence before delegation. This playground shows the basic idea without posting receipts, creating keys, or changing any live score.</p>
+    </section>
+
+    <div class="disclosure">
+      <strong>Read-only demo.</strong> This page does not post receipts, does not generate wallet or signing keys, and does not call the aggregator receipt endpoint. Trust scores are behavior-derived evidence, not safety guarantees.
+    </div>
+
+    <h2>Blind vs XAIP Selection</h2>
+    <p class="note">This frontend selection logic is an educational playground simplification. It is not live <code>/v1/select</code> behavior and does not change routing, scoring, or production decisions.</p>
+
+    <div class="grid">
+      <section class="panel">
+        <label class="label" for="scenario">Scenario</label>
+        <select id="scenario">
+          <option value="docs">Documentation lookup</option>
+          <option value="state">File or state access</option>
+          <option value="settlement">Agent commerce preparation</option>
+        </select>
+        <div id="scenarioDetail" style="margin-top: 14px;"></div>
+      </section>
+
+      <section class="panel subtle">
+        <div id="decisionOutput"></div>
+      </section>
+    </div>
+
+    <h2>Live Trust Evidence</h2>
+    <p>The table below fetches the same public Trust API used by the main dashboard. The current public dataset is MCP-heavy because MCP was the first integration target.</p>
+    <div class="status-bar">
+      <span class="dot" id="dot"></span>
+      <span id="status">loading...</span>
+      <span id="ts"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Server</th>
+          <th class="num">Trust</th>
+          <th>Verdict</th>
+          <th class="num">Receipts</th>
+          <th>Flags</th>
+          <th>Observed class</th>
+          <th>Observed verifiability</th>
+          <th>Observed settlement</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="8" class="mono" style="color: var(--muted);">fetching...</td></tr>
+      </tbody>
+    </table>
+    <p class="note">Observed metadata is display-only and does not affect current scoring or <code>/v1/select</code> behavior.</p>
+
+    <h2>Links</h2>
+    <div class="links">
+      <a href="./index.html">Main dashboard</a>
+      <a href="./agent-trust-overview.md">60-second overview</a>
+      <a href="./future-direction.md">Future direction</a>
+      <a href="./run-xaip-caller.md">Run xaip-caller</a>
+      <a href="https://github.com/xkumakichi/xaip-protocol">GitHub repo</a>
+    </div>
+
+    <footer>
+      This playground does not prove a tool is safe. It shows how an agent's choice changes when historical execution evidence is available.
+    </footer>
+  </main>
+
+  <script>
+    const API = "https://xaip-trust-api.kuma-github.workers.dev/v1/servers";
+    const missing = "—";
+    const scenarios = {
+      docs: {
+        label: "Documentation lookup",
+        task: "Find reliable documentation or context for a coding task.",
+        note: "Includes scored public candidates plus one unscored option.",
+        candidates: ["unknown-docs-server", "context7", "sequential-thinking", "filesystem"]
+      },
+      state: {
+        label: "File or state access",
+        task: "Choose a tool for reading or managing project state.",
+        note: "Includes file, memory, and storage-like scored candidates plus one unscored option.",
+        candidates: ["unknown-file-agent", "filesystem", "memory", "sqlite"]
+      },
+      settlement: {
+        label: "Agent commerce preparation",
+        task: "Check supporting tools before a transaction workflow.",
+        note: "This scenario does not execute a payment. The first candidate is an unscored placeholder; XAIP is not a payment rail.",
+        candidates: ["unknown-commerce-agent", "fetch", "context7", "memory"]
+      }
+    };
+
+    let serversBySlug = new Map();
+    let lastUpdate = null;
+
+    const dot = document.getElementById("dot");
+    const status = document.getElementById("status");
+    const ts = document.getElementById("ts");
+    const rows = document.getElementById("rows");
+    const scenario = document.getElementById("scenario");
+    const scenarioDetail = document.getElementById("scenarioDetail");
+    const decisionOutput = document.getElementById("decisionOutput");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function display(value) {
+      if (value === undefined || value === null || value === "") return missing;
+      return escapeHtml(value);
+    }
+
+    function formatTrust(value) {
+      return typeof value === "number" ? value.toFixed(3) : missing;
+    }
+
+    function candidateRecord(slug) {
+      const server = serversBySlug.get(slug);
+      return server ? { slug, scored: true, ...server } : { slug, scored: false, verdict: "unscored", trust: null, receipts: 0 };
+    }
+
+    function chooseFixed(candidates) {
+      const picked = candidateRecord(candidates[0]);
+      return {
+        picked,
+        reason: "Picks the first candidate from the upstream list without using trust evidence."
+      };
+    }
+
+    function chooseXAIPStyle(candidates) {
+      const scored = candidates.map(candidateRecord).filter(c => c.scored);
+      if (scored.length === 0) {
+        return {
+          picked: candidateRecord(candidates[0]),
+          reason: "No candidate has XAIP evidence in the current dataset, so this simplified replay cannot improve the choice."
+        };
+      }
+      scored.sort((a, b) => {
+        if (b.trust !== a.trust) return b.trust - a.trust;
+        if (b.receipts !== a.receipts) return b.receipts - a.receipts;
+        return a.slug.localeCompare(b.slug);
+      });
+      return {
+        picked: scored[0],
+        reason: "Prefers scored candidates over unscored candidates, then highest trust, then receipts, then slug."
+      };
+    }
+
+    function renderCandidateChips(candidates) {
+      return candidates.map(slug => {
+        const c = candidateRecord(slug);
+        const verdictClass = c.scored ? c.verdict : "";
+        const label = c.scored
+          ? `${c.slug} · ${formatTrust(c.trust)} · ${c.verdict}`
+          : `${c.slug} · unscored`;
+        return `<span class="chip ${escapeHtml(verdictClass)}">${escapeHtml(label)}</span>`;
+      }).join("");
+    }
+
+    function renderPick(title, decision) {
+      const p = decision.picked;
+      const detail = p.scored
+        ? `trust ${formatTrust(p.trust)}, ${display(p.verdict)}, ${display(p.receipts)} receipts`
+        : "no XAIP evidence yet";
+      return `<div class="strategy">
+        <div class="label">${escapeHtml(title)}</div>
+        <div>
+          <div class="picked">${escapeHtml(p.slug)}</div>
+          <div class="reason">${detail}</div>
+          <div class="reason">${escapeHtml(decision.reason)}</div>
+        </div>
+      </div>`;
+    }
+
+    function renderScenario() {
+      const selected = scenarios[scenario.value];
+      scenarioDetail.innerHTML = `<h3>${escapeHtml(selected.label)}</h3>
+        <p>${escapeHtml(selected.task)}</p>
+        <p class="reason">${escapeHtml(selected.note)}</p>
+        <div class="candidates">${renderCandidateChips(selected.candidates)}</div>`;
+
+      const fixed = chooseFixed(selected.candidates);
+      const xaip = chooseXAIPStyle(selected.candidates);
+      decisionOutput.innerHTML = `${renderPick("Fixed-order selection", fixed)}
+        ${renderPick("XAIP-style selection", xaip)}`;
+    }
+
+    function setErr(msg) {
+      dot.style.background = "var(--low)";
+      dot.style.boxShadow = "0 0 6px var(--low)";
+      status.textContent = msg;
+      status.className = "err";
+    }
+
+    function formatAgo(d) {
+      const s = Math.max(0, Math.round((Date.now() - d.getTime()) / 1000));
+      if (s < 60) return `updated ${s}s ago`;
+      const m = Math.round(s / 60);
+      if (m < 60) return `updated ${m}m ago`;
+      const h = Math.round(m / 60);
+      return `updated ${h}h ago`;
+    }
+
+    function setOk(count, timestamp) {
+      dot.style.background = "var(--trusted)";
+      dot.style.boxShadow = "0 0 6px var(--trusted)";
+      status.className = "";
+      status.textContent = `live · ${count} servers`;
+      lastUpdate = new Date(timestamp);
+      ts.textContent = formatAgo(lastUpdate);
+    }
+
+    function renderServers(servers) {
+      const sorted = servers.slice().sort((a, b) => (b.trust || 0) - (a.trust || 0));
+      rows.innerHTML = sorted.map(s => {
+        const flags = (s.riskFlags || []).map(f => `<span class="flag">${display(f)}</span>`).join(" ") || missing;
+        const observed = s.observedToolMetadata || {};
+        return `<tr>
+          <td>${display(s.slug || s.name)}</td>
+          <td class="num">${formatTrust(s.trust)}</td>
+          <td class="verdict ${escapeHtml(s.verdict || "")}">${display(s.verdict)}</td>
+          <td class="num">${display(s.receipts)}</td>
+          <td>${flags}</td>
+          <td>${display(observed.toolClass)}</td>
+          <td>${display(observed.verifiabilityHint)}</td>
+          <td>${display(observed.settlementLayer)}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    async function tick() {
+      try {
+        const r = await fetch(API, { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const data = await r.json();
+        const servers = data.servers || [];
+        serversBySlug = new Map(servers.map(s => [s.slug, s]));
+        renderServers(servers);
+        renderScenario();
+        setOk(data.count || servers.length, data.timestamp || new Date().toISOString());
+      } catch (e) {
+        setErr("error: " + e.message);
+        renderScenario();
+      }
+    }
+
+    scenario.addEventListener("change", renderScenario);
+    renderScenario();
+    tick();
+    setInterval(tick, 30000);
+    setInterval(() => { if (lastUpdate) ts.textContent = formatAgo(lastUpdate); }, 1000);
+  </script>
+</body>
+</html>

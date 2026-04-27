@@ -10,6 +10,7 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 
 ### Entry points
 
+- [Browser playground](./docs/playground.html) — read-only demo of trust-aware selection.
 - [60-second overview](./docs/agent-trust-overview.md) — the problem XAIP is trying to address.
 - [Future direction](./docs/future-direction.md) — long-term hypothesis, open questions, and current research asks.
 - [Agent Trust Check design](./docs/agent-trust-check-design.md) — planned diagnostic concept.
