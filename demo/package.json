@@ -7,7 +7,8 @@
     "start": "npx tsx demo.ts",
     "federation": "npx tsx federation.ts",
     "veridict": "npx tsx veridict-loop.ts",
-    "blind-vs-xaip": "npx tsx blind-vs-xaip.ts"
+    "blind-vs-xaip": "npx tsx blind-vs-xaip.ts",
+    "v05-metadata-smoke": "npx tsx v05-metadata-smoke.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
