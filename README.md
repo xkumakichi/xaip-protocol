@@ -10,6 +10,7 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 
 For a 60-second strategic overview, see [Agent Trust Before Agent Payments](./docs/agent-trust-overview.md).
 For the planned diagnostic concept, see [Agent Trust Check Design](./docs/agent-trust-check-design.md).
+For the long-term hypothesis and current research asks, see [Future Direction](./docs/future-direction.md).
 
 ## Try It Now
 
