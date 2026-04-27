@@ -257,6 +257,14 @@ interface StoredReceipt {
   settlementLayer: string | null;
 }
 
+interface ObservedToolMetadata {
+  toolClass?: string;
+  verifiabilityHint?: string;
+  settlementLayer?: string;
+  observedAt: string;
+  source: "latest_observed_receipt";
+}
+
 async function getReceipts(
   db: D1Database,
   agentDid: string,
@@ -440,6 +448,32 @@ interface QueryResult {
     lastUpdated: string;
     sources: number;
   };
+  observedToolMetadata?: ObservedToolMetadata;
+}
+
+function nonEmptyString(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function latestObservedToolMetadata(
+  receipts: StoredReceipt[]
+): ObservedToolMetadata | undefined {
+  for (const receipt of receipts) {
+    const toolClass = nonEmptyString(receipt.toolClass);
+    const verifiabilityHint = nonEmptyString(receipt.verifiabilityHint);
+    const settlementLayer = nonEmptyString(receipt.settlementLayer);
+    if (toolClass || verifiabilityHint || settlementLayer) {
+      return {
+        ...(toolClass ? { toolClass } : {}),
+        ...(verifiabilityHint ? { verifiabilityHint } : {}),
+        ...(settlementLayer ? { settlementLayer } : {}),
+        observedAt: receipt.timestamp,
+        source: "latest_observed_receipt",
+      };
+    }
+  }
+  return undefined;
 }
 
 function computeQueryResult(
@@ -449,6 +483,7 @@ function computeQueryResult(
 ): QueryResult {
   const total = receipts.length;
   const prior = getPrior(agentDid);
+  const observedToolMetadata = latestObservedToolMetadata(receipts);
 
   if (total < MIN_EXECUTIONS) {
     return {
@@ -466,6 +501,7 @@ function computeQueryResult(
           total > 0 ? receipts[0]!.timestamp : new Date().toISOString(),
         sources: 1,
       },
+      ...(observedToolMetadata ? { observedToolMetadata } : {}),
     };
   }
 
@@ -548,6 +584,7 @@ function computeQueryResult(
       lastUpdated: receipts[0]?.timestamp ?? new Date().toISOString(),
       sources: 1,
     },
+    ...(observedToolMetadata ? { observedToolMetadata } : {}),
   };
 }
 

@@ -110,12 +110,16 @@
           <th>Verdict</th>
           <th class="num">Receipts</th>
           <th>Flags</th>
+          <th>Observed class</th>
+          <th>Observed verifiability</th>
+          <th>Observed settlement</th>
         </tr>
       </thead>
       <tbody id="rows">
-        <tr><td colspan="5" class="mono" style="color: var(--muted);">fetching…</td></tr>
+        <tr><td colspan="8" class="mono" style="color: var(--muted);">fetching…</td></tr>
       </tbody>
     </table>
+    <p class="note">Observed metadata is display-only and does not affect current scoring or <code>/v1/select</code> behavior.</p>
 
     <h2>How these scores get used</h2>
     <p>The <code>xaip-claude-hook</code> fetches this API before every MCP tool call. If a server scores below the caution threshold, you see inline in Claude:</p>
@@ -195,12 +199,16 @@
       const sorted = servers.slice().sort((a, b) => b.trust - a.trust);
       rows.innerHTML = sorted.map(s => {
         const flags = (s.riskFlags || []).map(f => `<span class="flag">${f}</span>`).join(" ") || "—";
+        const observed = s.observedToolMetadata || {};
         return `<tr>
           <td>${s.slug}</td>
           <td class="num">${s.trust.toFixed(3)}</td>
           <td class="verdict ${s.verdict}">${s.verdict}</td>
           <td class="num">${s.receipts}</td>
           <td>${flags}</td>
+          <td>${observed.toolClass || "—"}</td>
+          <td>${observed.verifiabilityHint || "—"}</td>
+          <td>${observed.settlementLayer || "—"}</td>
         </tr>`;
       }).join("");
     }

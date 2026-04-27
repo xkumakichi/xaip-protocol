@@ -45,6 +45,15 @@ interface TrustResponse {
   riskFlags: string[];
   timestamp: string;
   computedFrom?: string;
+  observedToolMetadata?: ObservedToolMetadata;
+}
+
+interface ObservedToolMetadata {
+  toolClass?: string;
+  verifiabilityHint?: string;
+  settlementLayer?: string;
+  observedAt: string;
+  source: "latest_observed_receipt";
 }
 
 // ─── Live Data ──────────────────────────────────────────────────────────────
@@ -162,6 +171,7 @@ interface AggregatorQueryResult {
   trust: number;
   riskFlags: string[];
   meta: { sampleSize: number };
+  observedToolMetadata?: ObservedToolMetadata;
 }
 
 interface AggregatorNodeResponse {
@@ -201,6 +211,7 @@ function toTrustResponse(
     riskFlags: r.riskFlags,
     timestamp: new Date().toISOString(),
     computedFrom: `${r.meta.sampleSize} receipts via XAIP Aggregator BFT (${quorumSize} nodes)`,
+    ...(r.observedToolMetadata ? { observedToolMetadata: r.observedToolMetadata } : {}),
   };
 }
 
@@ -346,6 +357,11 @@ interface SelectResponse {
   timestamp: string;
 }
 
+function withoutObservedToolMetadata(response: TrustResponse): TrustResponse {
+  const { observedToolMetadata: _observedToolMetadata, ...rest } = response;
+  return rest;
+}
+
 async function buildSelectResponse(
   task: string,
   rawCandidates: string[],
@@ -414,7 +430,15 @@ async function buildSelectResponse(
       ? `All candidates below trust threshold — selecting best available (trust ${winner.trust})`
       : undefined;
 
-  return { selected: winner?.slug ?? null, reason, rejected, candidates, withoutXAIP, ...(warning ? { warning } : {}), timestamp: now };
+  return {
+    selected: winner?.slug ?? null,
+    reason,
+    rejected,
+    candidates: candidates.map(withoutObservedToolMetadata),
+    withoutXAIP,
+    ...(warning ? { warning } : {}),
+    timestamp: now,
+  };
 }
 
 // ─── Router ─────────────────────────────────────────────────────────────────
