@@ -37,3 +37,4 @@ docs/outreach/
 
 # npm pack tarballs (publish-only artifact)
 *.tgz
+.claude/settings.local.json
