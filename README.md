@@ -13,6 +13,7 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 - [60-second overview](./docs/agent-trust-overview.md) — the problem XAIP is trying to address.
 - [Future direction](./docs/future-direction.md) — long-term hypothesis, open questions, and current research asks.
 - [Agent Trust Check design](./docs/agent-trust-check-design.md) — planned diagnostic concept.
+- [Class-aware scoring design](./docs/class-aware-scoring-design.md) — future design note; not live scoring behavior.
 - [Emit receipts from anything](./docs/emit-from-anything.md) — how to produce XAIP receipts from any tool system.
 - [Run xaip-caller](./docs/run-xaip-caller.md) — contribute signed receipts without running MCP.
 
