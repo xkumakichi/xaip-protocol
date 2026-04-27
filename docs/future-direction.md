@@ -77,6 +77,8 @@ These are not promises. They become meaningful only if independent usage and fee
 
 ## What we need from others
 
+Current coordination thread: [External caller testing request](https://github.com/xkumakichi/xaip-protocol/issues/1).
+
 The current bottleneck is not polish. It is external evidence.
 
 The public trust graph is still too dependent on the maintainer's own runs. Even a small number of independent caller runs helps test whether receipts can be contributed outside the maintainer environment.

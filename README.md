@@ -8,9 +8,13 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 
 **Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current public trust scores, auto-refreshed, no auth. The current public dataset is MCP-heavy because MCP was the first integration target.
 
-For a 60-second strategic overview, see [Agent Trust Before Agent Payments](./docs/agent-trust-overview.md).
-For the planned diagnostic concept, see [Agent Trust Check Design](./docs/agent-trust-check-design.md).
-For the long-term hypothesis and current research asks, see [Future Direction](./docs/future-direction.md).
+### Entry points
+
+- [60-second overview](./docs/agent-trust-overview.md) — the problem XAIP is trying to address.
+- [Future direction](./docs/future-direction.md) — long-term hypothesis, open questions, and current research asks.
+- [Agent Trust Check design](./docs/agent-trust-check-design.md) — planned diagnostic concept.
+- [Emit receipts from anything](./docs/emit-from-anything.md) — how to produce XAIP receipts from any tool system.
+- [Run xaip-caller](./docs/run-xaip-caller.md) — contribute signed receipts without running MCP.
 
 ## Try It Now
 
