@@ -8,6 +8,8 @@ When an AI agent delegates work to an external tool, it has no idea whether that
 
 **Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current public trust scores, auto-refreshed, no auth. The current public dataset is MCP-heavy because MCP was the first integration target.
 
+For a 60-second strategic overview, see [Agent Trust Before Agent Payments](./docs/agent-trust-overview.md).
+
 ## Try It Now
 
 The API is live. No signup, no API key.
