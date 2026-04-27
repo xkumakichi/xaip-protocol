@@ -1,0 +1,11 @@
+{
+  "agentDid": "did:key:agent-v04",
+  "callerDid": "did:key:caller-v04",
+  "toolName": "docs/search",
+  "taskHash": "task-v04",
+  "resultHash": "result-v04",
+  "success": true,
+  "latencyMs": 123,
+  "failureType": "",
+  "timestamp": "2026-04-24T00:00:00.000Z"
+}

@@ -54,12 +54,29 @@ interface ReceiptData {
   failureType?: string;
   timestamp: string;
   callerDid?: string;
+  toolMetadata?: ToolMetadata;
   signature: string;
   callerSignature?: string;
 }
 
+interface ToolMetadata {
+  xaip?: {
+    class?: string;
+    secondaryClasses?: string[];
+    settlementLayer?: string;
+    verifiabilityHint?: string;
+    anchorTxHash?: string;
+    anchorLedgerIndex?: number;
+  };
+  [key: string]: unknown;
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
 function receiptPayload(r: Omit<ReceiptData, "signature" | "callerSignature">): string {
-  return canonicalize({
+  const obj: Record<string, unknown> = {
     agentDid: r.agentDid,
     callerDid: r.callerDid ?? "",
     failureType: r.failureType ?? "",
@@ -69,7 +86,11 @@ function receiptPayload(r: Omit<ReceiptData, "signature" | "callerSignature">): 
     taskHash: r.taskHash,
     timestamp: r.timestamp,
     toolName: r.toolName,
-  });
+  };
+  if (r.toolMetadata !== undefined) {
+    obj.toolMetadata = r.toolMetadata;
+  }
+  return canonicalize(obj);
 }
 
 // ─── Hex Utilities ───────────────────────────────────────────────────────────
@@ -137,7 +158,7 @@ async function signEd25519(payload: string, privateKeyHex: string): Promise<stri
 function callerDIDToSPKI(callerDid: string): string | null {
   const m = callerDid.match(/^did:key:([0-9a-f]{64})$/i);
   if (!m) return null;
-  return "302a300506032b6570032100" + m[1].toLowerCase();
+  return "302a300506032b6570032100" + m[1]!.toLowerCase();
 }
 
 // ─── Node Key Management ─────────────────────────────────────────────────────
@@ -158,9 +179,9 @@ async function getOrCreateNodeKeys(db: D1Database): Promise<NodeKeyRow> {
   const kp = await crypto.subtle.generateKey({ name: "Ed25519" }, true, [
     "sign",
     "verify",
-  ]);
-  const pubDer = await crypto.subtle.exportKey("spki", kp.publicKey);
-  const privDer = await crypto.subtle.exportKey("pkcs8", kp.privateKey);
+  ]) as CryptoKeyPair;
+  const pubDer = await crypto.subtle.exportKey("spki", kp.publicKey) as ArrayBuffer;
+  const privDer = await crypto.subtle.exportKey("pkcs8", kp.privateKey) as ArrayBuffer;
   const pub = bytesToHex(new Uint8Array(pubDer));
   const priv = bytesToHex(new Uint8Array(privDer));
 
@@ -216,6 +237,10 @@ interface ReceiptRow {
   timestamp: string;
   caller_did: string | null;
   caller_signature: string | null;
+  tool_metadata_json: string | null;
+  tool_class: string | null;
+  verifiability_hint: string | null;
+  settlement_layer: string | null;
 }
 
 interface StoredReceipt {
@@ -226,6 +251,10 @@ interface StoredReceipt {
   timestamp: string;
   callerDid: string | null;
   callerSignature: string | null;
+  toolMetadata: ToolMetadata | null;
+  toolClass: string | null;
+  verifiabilityHint: string | null;
+  settlementLayer: string | null;
 }
 
 async function getReceipts(
@@ -237,7 +266,8 @@ async function getReceipts(
     ? db
         .prepare(
           `SELECT tool_name, success, latency_ms, failure_type, timestamp,
-                  caller_did, caller_signature
+                  caller_did, caller_signature, tool_metadata_json,
+                  tool_class, verifiability_hint, settlement_layer
            FROM receipts
            WHERE agent_did = ? AND tool_name = ?
            ORDER BY timestamp DESC
@@ -247,7 +277,8 @@ async function getReceipts(
     : db
         .prepare(
           `SELECT tool_name, success, latency_ms, failure_type, timestamp,
-                  caller_did, caller_signature
+                  caller_did, caller_signature, tool_metadata_json,
+                  tool_class, verifiability_hint, settlement_layer
            FROM receipts
            WHERE agent_did = ?
            ORDER BY timestamp DESC
@@ -264,6 +295,10 @@ async function getReceipts(
     timestamp: r.timestamp,
     callerDid: r.caller_did,
     callerSignature: r.caller_signature,
+    toolMetadata: r.tool_metadata_json ? JSON.parse(r.tool_metadata_json) : null,
+    toolClass: r.tool_class,
+    verifiabilityHint: r.verifiability_hint,
+    settlementLayer: r.settlement_layer,
   }));
 }
 
@@ -603,12 +638,19 @@ async function handlePostReceipts(
     }
   }
 
-  // Store in D1
+  // Store in D1. v0.5 metadata is preserved for future class-aware scoring,
+  // but it does not affect scoring in this PR.
+  const toolMetadataJson = receipt.toolMetadata
+    ? JSON.stringify(receipt.toolMetadata)
+    : null;
+  const xaipMetadata = receipt.toolMetadata?.xaip;
   await env.DB.prepare(
     `INSERT INTO receipts
       (agent_did, tool_name, task_hash, result_hash, success, latency_ms,
-       failure_type, timestamp, signature, caller_did, caller_signature, public_key)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       failure_type, timestamp, signature, caller_did, caller_signature,
+       public_key, tool_metadata_json, tool_class, verifiability_hint,
+       settlement_layer)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       receipt.agentDid,
@@ -623,7 +665,11 @@ async function handlePostReceipts(
       receipt.callerDid ?? null,
       // Only store co-sig if verified; still record callerDid for diversity
       callerVerified ? (receipt.callerSignature ?? null) : null,
-      publicKey
+      publicKey,
+      toolMetadataJson,
+      stringOrNull(xaipMetadata?.class),
+      stringOrNull(xaipMetadata?.verifiabilityHint),
+      stringOrNull(xaipMetadata?.settlementLayer)
     )
     .run();
 

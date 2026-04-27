@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS receipts (
   timestamp TEXT NOT NULL,
   signature TEXT NOT NULL,
   caller_did TEXT,
-  caller_signature TEXT
+  caller_signature TEXT,
+  tool_metadata_json TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_agent_tool ON receipts(agent_did, tool_name);
 CREATE INDEX IF NOT EXISTS idx_timestamp ON receipts(timestamp);
@@ -52,6 +53,10 @@ ALTER TABLE receipts ADD COLUMN caller_did TEXT;
 ALTER TABLE receipts ADD COLUMN caller_signature TEXT;
 `;
 
+const MIGRATION_V05 = `
+ALTER TABLE receipts ADD COLUMN tool_metadata_json TEXT;
+`;
+
 export interface StoredReceipt {
   toolName: string;
   success: boolean;
@@ -60,6 +65,7 @@ export interface StoredReceipt {
   timestamp: string;
   callerDid: string | null;
   callerSignature: string | null;
+  toolMetadata?: ExecutionReceipt["toolMetadata"] | null;
 }
 
 export class ReceiptStore {
@@ -104,6 +110,15 @@ export class ReceiptStore {
           }
         }
       }
+      if (!colNames.includes("tool_metadata_json")) {
+        for (const stmt of MIGRATION_V05.split(";").filter((s) => s.trim())) {
+          try {
+            this.db.run(stmt);
+          } catch {
+            // Column may already exist
+          }
+        }
+      }
     } catch {
       // pragma not supported — fresh DB, SCHEMA already applied
     }
@@ -137,8 +152,9 @@ export class ReceiptStore {
     db.run(
       `INSERT INTO receipts
         (agent_did, tool_name, task_hash, result_hash, success, latency_ms,
-         failure_type, timestamp, signature, caller_did, caller_signature)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         failure_type, timestamp, signature, caller_did, caller_signature,
+         tool_metadata_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         receipt.agentDid,
         receipt.toolName,
@@ -151,6 +167,7 @@ export class ReceiptStore {
         receipt.signature,
         receipt.callerDid ?? null,
         receipt.callerSignature ?? null,
+        receipt.toolMetadata ? JSON.stringify(receipt.toolMetadata) : null,
       ]
     );
 
@@ -172,7 +189,7 @@ export class ReceiptStore {
 
     const rows = db.exec(
       `SELECT tool_name, success, latency_ms, failure_type, timestamp,
-              caller_did, caller_signature
+              caller_did, caller_signature, tool_metadata_json
        FROM receipts ${where}
        ORDER BY timestamp DESC`,
       params
@@ -186,6 +203,7 @@ export class ReceiptStore {
       timestamp: r[4] as string,
       callerDid: (r[5] as string) || null,
       callerSignature: (r[6] as string) || null,
+      toolMetadata: r[7] ? JSON.parse(r[7] as string) : null,
     }));
   }
 

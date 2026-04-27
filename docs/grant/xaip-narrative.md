@@ -48,7 +48,7 @@ XAIP replaces upstream-derived trust with **behavior-derived** trust:
 
 **Specification:**
 - v0.4 shipped.
-- v0.5 Release Candidate adds **tool class taxonomy** (advisory / data-retrieval / computation / mutation / settlement) with class-aware risk evaluation. Settlement tools anchored to an external layer (e.g., XRPL) are scored differently from advisory tools — `low_caller_diversity` is skipped when every receipt is already reconciled against a settlement ledger.
+- v0.5 Release Candidate defines **tool class taxonomy** (advisory / data-retrieval / computation / mutation / settlement) and the class-aware risk evaluation design. Aggregator implementation for class-aware scoring is a separate milestone.
 
 **Integrations (npm):**
 - `xaip-sdk` — core signing/verification.
@@ -67,12 +67,12 @@ XAIP replaces upstream-derived trust with **behavior-derived** trust:
 
 ### XRPL ecosystem (GLOW retroactive / XRPL Grants AI Fund / XAO DAO)
 
-XAIP v0.5 RC introduces a `settlement` tool class specifically designed for on-chain execution tools. The class is first-class in risk evaluation: receipts from a settlement tool are scored against anchor verification against the declared settlement layer (e.g., `xrpl-mainnet`). This means XRPL-integrated tools get a distinct trust signal that non-settlement tools cannot fake.
+XAIP v0.5 RC introduces a `settlement` tool class specifically designed for on-chain execution tools. The design allows receipts from a settlement tool to be evaluated against anchor verification on the declared settlement layer (e.g., `xrpl-mainnet`) once aggregator support is implemented.
 
 Concrete XRPL surface:
 - `did:xrpl` is supported as an identity method for both agents and callers.
-- The v0.5 spec defines `verifiabilityHint: anchored` with mandatory sample verification — the aggregator periodically checks a 5%/hour sample of receipts against the settlement ledger. An unanchored receipt claiming to be anchored triggers a `settlement_anchor_mismatch` flag and drops `settlementVerifiability` to 0.
-- This creates a structural reason for XRPL-integrated AI tools to be preferred by trust-aware agents: they can be verified against the ledger, while non-anchored tools cannot.
+- The v0.5 spec defines `verifiabilityHint: anchored` with mandatory sample verification for conformant implementations. The planned aggregator path checks a sample of receipts against the settlement ledger; an unanchored receipt claiming to be anchored would trigger a `settlement_anchor_mismatch` flag.
+- This would let trust-aware agents distinguish tools with externally verifiable settlement evidence from tools without such anchors.
 
 ### AI agent infrastructure (general)
 
@@ -100,7 +100,7 @@ Funding use (priority order):
 
 | Risk | Mitigation |
 |---|---|
-| Self-declared class metadata could be gamed | Inline `toolMetadata` is caller-cosigned; settlement anchor sampling catches fakes (spec §10.4). |
+| Self-declared class metadata could be gamed | v0.5 `toolMetadata` is designed to be caller-cosigned; settlement anchor sampling is specified for conformant implementations (spec §10.4). |
 | Centralized aggregator = single gatekeeper (the thing we argue against) | v0.5 spec defines BFT quorum; post-grant priority is onboarding independent aggregators. |
 | Single-operator caller diversity inflation | CI generates fresh keys per run; grant priority is recruiting independent callers. |
 | XAIP itself becomes a registry-like gatekeeper | Protocol is OSS, aggregators are self-hostable, no central index. Receipts are portable across aggregator instances. |

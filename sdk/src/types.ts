@@ -42,6 +42,29 @@ export interface SigningDelegate {
 
 export type FailureType = "timeout" | "error" | "validation";
 
+export type XAIPToolClass =
+  | "advisory"
+  | "data-retrieval"
+  | "computation"
+  | "mutation"
+  | "settlement";
+
+export type XAIPVerifiabilityHint = "anchored" | "attestable" | "none";
+
+export interface XAIPToolMetadata {
+  class?: XAIPToolClass;
+  secondaryClasses?: XAIPToolClass[];
+  settlementLayer?: string;
+  verifiabilityHint?: XAIPVerifiabilityHint;
+  anchorTxHash?: string;
+  anchorLedgerIndex?: number;
+}
+
+export interface ToolMetadata {
+  xaip?: XAIPToolMetadata;
+  [key: string]: unknown;
+}
+
 export interface ExecutionReceipt {
   agentDid: string;
   toolName: string;
@@ -51,6 +74,7 @@ export interface ExecutionReceipt {
   latencyMs: number;
   failureType?: FailureType;
   timestamp: string;
+  toolMetadata?: ToolMetadata;
   signature: string;
   callerDid?: string;
   callerSignature?: string;

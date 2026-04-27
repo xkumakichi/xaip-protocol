@@ -1,0 +1,20 @@
+{
+  "agentDid": "did:key:agent-v05",
+  "callerDid": "did:key:caller-v05",
+  "toolName": "payments/send",
+  "taskHash": "task-v05",
+  "resultHash": "result-v05",
+  "success": true,
+  "latencyMs": 456,
+  "failureType": "",
+  "timestamp": "2026-04-24T00:00:00.000Z",
+  "toolMetadata": {
+    "xaip": {
+      "class": "settlement",
+      "settlementLayer": "xrpl-testnet",
+      "verifiabilityHint": "anchored",
+      "anchorTxHash": "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789",
+      "anchorLedgerIndex": 16751127
+    }
+  }
+}

@@ -14,7 +14,7 @@ export interface XAIPCallbackHandlerOptions {
   disabled?: boolean;
   /**
    * Optional XAIP v0.5 class hint per tool. The returned class is attached as
-   * `toolMetadata.xaip.class` alongside the receipt. Aggregators that don't
+   * `receipt.toolMetadata.xaip.class`. Aggregators that don't
    * recognize the field ignore it (forward-compatible).
    */
   classifyTool?: (toolName: string) => XAIPClassHint | null | undefined;

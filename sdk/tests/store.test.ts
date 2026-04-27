@@ -121,6 +121,31 @@ describe("ReceiptStore", () => {
       expect(receipts[0].callerDid).toBeNull();
       expect(receipts[0].callerSignature).toBeNull();
     });
+
+    it("stores optional v0.5 tool metadata without requiring it", async () => {
+      await store.log({
+        agentDid: "did:key:executor",
+        toolName: "settlement/send",
+        taskHash: "h1",
+        resultHash: "r1",
+        success: true,
+        latencyMs: 100,
+        timestamp: new Date().toISOString(),
+        signature: "execsig",
+        toolMetadata: {
+          xaip: {
+            class: "settlement",
+            settlementLayer: "xrpl-testnet",
+            verifiabilityHint: "anchored",
+          },
+        },
+      });
+
+      const receipts = await store.getReceipts("did:key:executor");
+      expect(receipts).toHaveLength(1);
+      expect(receipts[0].toolMetadata?.xaip?.class).toBe("settlement");
+      expect(receipts[0].toolMetadata?.xaip?.settlementLayer).toBe("xrpl-testnet");
+    });
   });
 
   describe("DID registry & rate limiting (v0.3)", () => {

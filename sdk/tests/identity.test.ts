@@ -8,6 +8,9 @@ import {
   receiptPayload,
 } from "../src/identity";
 
+import v04Receipt from "./fixtures/v04-receipt.json";
+import v05Receipt from "./fixtures/v05-receipt.json";
+
 describe("parseDID", () => {
   it("parses did:key", () => {
     const did = parseDID("did:key:abc123");
@@ -184,6 +187,33 @@ describe("receiptPayload (JCS / RFC 8785)", () => {
     expect(verify(payload, callerSig, caller.publicKey)).toBe(true);
     // Cross-verify should fail
     expect(verify(payload, execSig, caller.publicKey)).toBe(false);
+  });
+
+  it("keeps v0.4 receipt payloads unchanged when toolMetadata is absent", () => {
+    const payload = receiptPayload(v04Receipt as any);
+
+    expect(payload).toBe(
+      '{"agentDid":"did:key:agent-v04","callerDid":"did:key:caller-v04","failureType":"","latencyMs":123,"resultHash":"result-v04","success":true,"taskHash":"task-v04","timestamp":"2026-04-24T00:00:00.000Z","toolName":"docs/search"}'
+    );
+    expect(JSON.parse(payload)).not.toHaveProperty("toolMetadata");
+  });
+
+  it("includes v0.5 toolMetadata in the signed payload when present", () => {
+    const payload = receiptPayload(v05Receipt as any);
+    const parsed = JSON.parse(payload);
+
+    expect(parsed.toolMetadata.xaip.class).toBe("settlement");
+    expect(parsed.toolMetadata.xaip.verifiabilityHint).toBe("anchored");
+  });
+
+  it("verifies old and metadata-bearing receipts with their canonical payloads", () => {
+    const v04Keys = generateDIDKey();
+    const v05Keys = generateDIDKey();
+    const v04Payload = receiptPayload({ ...v04Receipt, agentDid: v04Keys.did.id } as any);
+    const v05Payload = receiptPayload({ ...v05Receipt, agentDid: v05Keys.did.id } as any);
+
+    expect(verify(v04Payload, sign(v04Payload, v04Keys.privateKey), v04Keys.publicKey)).toBe(true);
+    expect(verify(v05Payload, sign(v05Payload, v05Keys.privateKey), v05Keys.publicKey)).toBe(true);
   });
 
   // ─── JCS RFC 8785 Conformance ──────────────────────

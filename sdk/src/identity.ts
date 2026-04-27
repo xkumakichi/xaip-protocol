@@ -78,7 +78,7 @@ export function generateDIDKey(): {
 export function receiptPayload(
   r: Omit<ExecutionReceipt, "signature" | "callerSignature">
 ): string {
-  const obj = {
+  const obj: Record<string, unknown> = {
     agentDid: r.agentDid,
     callerDid: r.callerDid ?? "",
     failureType: r.failureType ?? "",
@@ -89,6 +89,9 @@ export function receiptPayload(
     timestamp: r.timestamp,
     toolName: r.toolName,
   };
+  if (r.toolMetadata !== undefined) {
+    obj.toolMetadata = r.toolMetadata;
+  }
   return canonicalize(obj);
 }
 

@@ -289,9 +289,10 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 - [x] Published preview receipt producers: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
-- [x] v0.5 RC: tool class taxonomy + class-aware risk evaluation (advisory / data-retrieval / computation / mutation / settlement)
+- [x] v0.5 draft: tool class taxonomy + class-aware risk evaluation design
 - [x] Multi-caller diversity mechanism verified ([2+ caller identities, metric responds across 8 servers](./docs/contributor/caller-diversity-verification.md))
-- [ ] Aggregator implementation of v0.5 class-aware scoring
+- [ ] v0.5 class metadata plumbing
+- [ ] Class-aware risk evaluation in aggregator
 - [x] Zero-install caller path: [`npx xaip-caller`](./clients/caller/) (30-second first contribution, demonstrates XAIP beyond MCP)
 - [ ] External operator callers (mechanism live, external adoption pending — run `npx xaip-caller` or the [full guide](./docs/contributor/run-a-caller.md))
 

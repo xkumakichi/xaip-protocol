@@ -147,8 +147,9 @@ async function postReceipt({ toolName, input, output, success, err, start, class
     failureType,
     timestamp,
   };
+  if (classHint) base.toolMetadata = { xaip: { class: classHint } };
 
-  const payload = canonicalize({
+  const payloadObject = {
     agentDid: base.agentDid,
     callerDid: base.callerDid,
     failureType: base.failureType,
@@ -158,7 +159,9 @@ async function postReceipt({ toolName, input, output, success, err, start, class
     taskHash: base.taskHash,
     timestamp: base.timestamp,
     toolName: base.toolName,
-  });
+  };
+  if (base.toolMetadata) payloadObject.toolMetadata = base.toolMetadata;
+  const payload = canonicalize(payloadObject);
 
   const signature = sign(payload, agent.privateKey);
   const callerSignature = sign(payload, caller.privateKey);
@@ -168,8 +171,6 @@ async function postReceipt({ toolName, input, output, success, err, start, class
     publicKey: agent.publicKey,
     callerPublicKey: caller.publicKey,
   };
-
-  if (classHint) body.toolMetadata = { xaip: { class: classHint } };
 
   try {
     const res = await fetch(`${aggregatorUrl}/receipts`, {

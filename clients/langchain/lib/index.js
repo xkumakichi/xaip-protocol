@@ -150,7 +150,7 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
    * @param {boolean} [opts.disabled]          If true, no receipts are emitted.
    * @param {(toolName: string) => string} [opts.classifyTool]
    *        Optional XAIP class hint per tool ("advisory" | "data-retrieval" |
-   *        "computation" | "mutation" | "settlement"). Carried alongside
+   *        "computation" | "mutation" | "settlement"). Carried inside
    *        receipts as future-compatible metadata; aggregators that don't
    *        recognize the field ignore it.
    */
@@ -230,8 +230,14 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
         failureType,
         timestamp,
       };
+      if (this.classifyTool) {
+        try {
+          const cls = this.classifyTool(toolName);
+          if (cls) base.toolMetadata = { xaip: { class: cls } };
+        } catch (_) {}
+      }
 
-      const payload = canonicalize({
+      const payloadObject = {
         agentDid: base.agentDid,
         callerDid: base.callerDid,
         failureType: base.failureType,
@@ -241,7 +247,9 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
         taskHash: base.taskHash,
         timestamp: base.timestamp,
         toolName: base.toolName,
-      });
+      };
+      if (base.toolMetadata) payloadObject.toolMetadata = base.toolMetadata;
+      const payload = canonicalize(payloadObject);
 
       const signature = sign(payload, agent.privateKey);
       const callerSignature = sign(payload, caller.privateKey);
@@ -251,14 +259,6 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
         publicKey: agent.publicKey,
         callerPublicKey: caller.publicKey,
       };
-
-      // v0.5 forward-compat: attach optional class hint.
-      if (this.classifyTool) {
-        try {
-          const cls = this.classifyTool(toolName);
-          if (cls) body.toolMetadata = { xaip: { class: cls } };
-        } catch (_) {}
-      }
 
       const res = await fetch(`${this.aggregatorUrl}/receipts`, {
         method: "POST",

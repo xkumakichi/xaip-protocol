@@ -86,7 +86,7 @@ For each tool call, one receipt:
 
 ## Tool class hints (XAIP v0.5 forward-compat)
 
-If you classify your tools, the aggregator can apply class-aware risk evaluation (see [XAIP-SPEC v0.5 draft](../../XAIP-SPEC-v0.5-DRAFT.md)):
+If you classify your tools, future v0.5 aggregator support can apply class-aware risk evaluation (see [XAIP-SPEC v0.5 draft](../../XAIP-SPEC-v0.5-DRAFT.md)):
 
 ```js
 await executeToolCalls(toolCalls, toolMap, {
@@ -99,7 +99,7 @@ await executeToolCalls(toolCalls, toolMap, {
 });
 ```
 
-The hint is attached to the receipt as `toolMetadata.xaip.class` and ignored by aggregators that don't yet support v0.5.
+The hint is attached to the receipt as `receipt.toolMetadata.xaip.class` and ignored by aggregators that don't yet support v0.5.
 
 ## Configuration
 

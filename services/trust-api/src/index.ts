@@ -394,7 +394,7 @@ async function buildSelectResponse(
   } else if (rejected.length > 0) {
     withoutXAIP = `Random selection would include ${rejected.length} low-trust server(s) — XAIP ranked them out automatically`;
   } else {
-    withoutXAIP = `All candidates are trusted — XAIP confirms safe to delegate to any of them`;
+    withoutXAIP = `All candidates have available trust evidence — XAIP selected the highest-scoring option in this candidate set`;
   }
 
   let reason: string;
