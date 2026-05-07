@@ -21,14 +21,24 @@ const os = require("os");
 const crypto = require("crypto");
 
 const DEFAULT_AGGREGATOR_URL = "https://xaip-aggregator.kuma-github.workers.dev";
-const XAIP_DIR = path.join(os.homedir(), ".xaip");
-const KEY_FILE = path.join(XAIP_DIR, "openai-keys.json");
-const LOG_FILE = path.join(XAIP_DIR, "openai.log");
+
+function defaultXaipDir() {
+  return path.join(os.homedir(), ".xaip");
+}
+
+function getKeyFile() {
+  return process.env.XAIP_OPENAI_KEYS_FILE || path.join(defaultXaipDir(), "openai-keys.json");
+}
+
+function getLogFile() {
+  return process.env.XAIP_OPENAI_LOG_FILE || path.join(defaultXaipDir(), "openai.log");
+}
 
 function log(msg) {
   try {
-    fs.mkdirSync(XAIP_DIR, { recursive: true });
-    fs.appendFileSync(LOG_FILE, `${new Date().toISOString()} ${msg}\n`);
+    const file = getLogFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, `${new Date().toISOString()} ${msg}\n`);
   } catch (_) {}
 }
 
@@ -46,9 +56,10 @@ function generateKeyPair(didBase) {
 }
 
 function loadKeys() {
+  const file = getKeyFile();
   try {
-    if (fs.existsSync(KEY_FILE)) {
-      return JSON.parse(fs.readFileSync(KEY_FILE, "utf8"));
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, "utf8"));
     }
   } catch (e) {
     log(`loadKeys error: ${e.message}`);
@@ -57,8 +68,9 @@ function loadKeys() {
 }
 
 function saveKeys(keys) {
-  fs.mkdirSync(XAIP_DIR, { recursive: true });
-  fs.writeFileSync(KEY_FILE, JSON.stringify(keys, null, 2));
+  const file = getKeyFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(keys, null, 2));
 }
 
 function ensureCaller(keys) {
@@ -126,53 +138,65 @@ function inferFailureType(err) {
   return "tool_error";
 }
 
-async function postReceipt({ toolName, input, output, success, err, start, classHint, aggregatorUrl }) {
-  const keys = loadKeys();
-  const caller = ensureCaller(keys);
-  const agent = ensureAgent(keys, toolName);
-  const latencyMs = Date.now() - start;
-  const failureType = success ? "" : inferFailureType(err);
-  const timestamp = new Date().toISOString();
-  const taskHash = sha256short(JSON.stringify(input));
-  const resultHash = sha256short(JSON.stringify(output));
-
-  const base = {
-    agentDid: agent.did,
-    callerDid: caller.did,
-    toolName,
-    taskHash,
-    resultHash,
-    success,
-    latencyMs,
-    failureType,
-    timestamp,
-  };
-  if (classHint) base.toolMetadata = { xaip: { class: classHint } };
-
-  const payloadObject = {
-    agentDid: base.agentDid,
-    callerDid: base.callerDid,
-    failureType: base.failureType,
-    latencyMs: base.latencyMs,
-    resultHash: base.resultHash,
-    success: base.success,
-    taskHash: base.taskHash,
-    timestamp: base.timestamp,
-    toolName: base.toolName,
-  };
-  if (base.toolMetadata) payloadObject.toolMetadata = base.toolMetadata;
-  const payload = canonicalize(payloadObject);
-
-  const signature = sign(payload, agent.privateKey);
-  const callerSignature = sign(payload, caller.privateKey);
-
-  const body = {
-    receipt: { ...base, signature, callerSignature },
-    publicKey: agent.publicKey,
-    callerPublicKey: caller.publicKey,
-  };
-
+function safeStringify(value) {
   try {
+    return JSON.stringify(value);
+  } catch (_) {
+    // Circular references or other non-serializable values fall back to a stable
+    // marker so the receipt still gets a deterministic resultHash.
+    return JSON.stringify({ _xaip_unserializable: true });
+  }
+}
+
+async function postReceipt({ toolName, input, output, success, err, start, classHint, aggregatorUrl }) {
+  // The whole emission path is wrapped so that hashing/signing/transport errors
+  // never escape as unhandled promise rejections from fire-and-forget callers.
+  try {
+    const keys = loadKeys();
+    const caller = ensureCaller(keys);
+    const agent = ensureAgent(keys, toolName);
+    const latencyMs = Date.now() - start;
+    const failureType = success ? "" : inferFailureType(err);
+    const timestamp = new Date().toISOString();
+    const taskHash = sha256short(safeStringify(input));
+    const resultHash = sha256short(safeStringify(output));
+
+    const base = {
+      agentDid: agent.did,
+      callerDid: caller.did,
+      toolName,
+      taskHash,
+      resultHash,
+      success,
+      latencyMs,
+      failureType,
+      timestamp,
+    };
+    if (classHint) base.toolMetadata = { xaip: { class: classHint } };
+
+    const payloadObject = {
+      agentDid: base.agentDid,
+      callerDid: base.callerDid,
+      failureType: base.failureType,
+      latencyMs: base.latencyMs,
+      resultHash: base.resultHash,
+      success: base.success,
+      taskHash: base.taskHash,
+      timestamp: base.timestamp,
+      toolName: base.toolName,
+    };
+    if (base.toolMetadata) payloadObject.toolMetadata = base.toolMetadata;
+    const payload = canonicalize(payloadObject);
+
+    const signature = sign(payload, agent.privateKey);
+    const callerSignature = sign(payload, caller.privateKey);
+
+    const body = {
+      receipt: { ...base, signature, callerSignature },
+      publicKey: agent.publicKey,
+      callerPublicKey: caller.publicKey,
+    };
+
     const res = await fetch(`${aggregatorUrl}/receipts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -181,7 +205,7 @@ async function postReceipt({ toolName, input, output, success, err, start, class
     const text = await res.text();
     log(`POST ${toolName} ok=${success} lat=${latencyMs}ms → ${res.status} ${text.slice(0, 120)}`);
   } catch (e) {
-    log(`POST error (${toolName}): ${e.message}`);
+    log(`emit error (${toolName}): ${e && e.message ? e.message : e}`);
   }
 }
 
@@ -293,3 +317,14 @@ async function executeToolCalls(toolCalls, toolMap, opts) {
 
 module.exports = { runWithXAIP, executeToolCalls };
 module.exports.default = { runWithXAIP, executeToolCalls };
+
+// Internal helpers exposed for tests only. Not part of the stable public API.
+module.exports.__internals = {
+  canonicalize,
+  sha256short,
+  inferFailureType,
+  slugify,
+  safeStringify,
+  getKeyFile,
+  getLogFile,
+};

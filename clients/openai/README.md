@@ -120,7 +120,29 @@ Both are local-only and never transmitted.
 
 ## Status
 
-**v0.1.0 — preview.** API may change before 1.0. Receipt format is stable (XAIP v0.4 spec).
+**v0.2.0 — tested preview.** Integration-tested against OpenAI's tool-calling shape with a runnable example (`examples/demo.js`). API may still change before 1.0. The receipt format is the XAIP v0.4 spec, with optional v0.5 `toolMetadata` carried forward-compatibly.
+
+Sibling client `xaip-claude-hook` is still an earlier-stage preview without integration tests.
+
+## Run the demo
+
+```bash
+git clone https://github.com/xkumakichi/xaip-protocol.git
+cd xaip-protocol/clients/openai
+npm install --no-save jest
+node examples/demo.js              # dry-run, no network writes
+node examples/demo.js --live       # post 2 receipts to the live aggregator
+```
+
+The dry-run mode intercepts `fetch` so no network writes happen. Use `--live` only when you want to contribute receipts to the live trust graph.
+
+## Test
+
+```bash
+npm test
+```
+
+Covers JCS canonicalization, Ed25519 sign/verify roundtrip via `runWithXAIP`, the `executeToolCalls` loop with mixed success/error tool calls, malformed argument fallback to `{ _raw }`, unregistered-tool handling, `classifyTool` v0.5 metadata path, circular-reference output safety, and `XAIP_DISABLED` gating.
 
 ## Related
 
