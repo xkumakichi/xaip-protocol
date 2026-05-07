@@ -20,14 +20,24 @@ const os = require("os");
 const crypto = require("crypto");
 
 const DEFAULT_AGGREGATOR_URL = "https://xaip-aggregator.kuma-github.workers.dev";
-const XAIP_DIR = path.join(os.homedir(), ".xaip");
-const KEY_FILE = path.join(XAIP_DIR, "langchain-keys.json");
-const LOG_FILE = path.join(XAIP_DIR, "langchain.log");
+
+function defaultXaipDir() {
+  return path.join(os.homedir(), ".xaip");
+}
+
+function getKeyFile() {
+  return process.env.XAIP_LANGCHAIN_KEYS_FILE || path.join(defaultXaipDir(), "langchain-keys.json");
+}
+
+function getLogFile() {
+  return process.env.XAIP_LANGCHAIN_LOG_FILE || path.join(defaultXaipDir(), "langchain.log");
+}
 
 function log(msg) {
   try {
-    fs.mkdirSync(XAIP_DIR, { recursive: true });
-    fs.appendFileSync(LOG_FILE, `${new Date().toISOString()} ${msg}\n`);
+    const file = getLogFile();
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, `${new Date().toISOString()} ${msg}\n`);
   } catch (_) {}
 }
 
@@ -45,9 +55,10 @@ function generateKeyPair(didBase) {
 }
 
 function loadKeys() {
+  const file = getKeyFile();
   try {
-    if (fs.existsSync(KEY_FILE)) {
-      return JSON.parse(fs.readFileSync(KEY_FILE, "utf8"));
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, "utf8"));
     }
   } catch (e) {
     log(`loadKeys error: ${e.message}`);
@@ -56,8 +67,9 @@ function loadKeys() {
 }
 
 function saveKeys(keys) {
-  fs.mkdirSync(XAIP_DIR, { recursive: true });
-  fs.writeFileSync(KEY_FILE, JSON.stringify(keys, null, 2));
+  const file = getKeyFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(keys, null, 2));
 }
 
 function ensureCaller(keys) {
@@ -112,6 +124,30 @@ function sign(payload, privateKeyHex) {
 
 function sha256short(v) {
   return crypto.createHash("sha256").update(v).digest("hex").slice(0, 16);
+}
+
+/**
+ * Resolve a stable string tool name from LangChain's callback arguments.
+ *
+ * LangChain passes a Serialized form to handleToolStart, where:
+ *   tool.id     is the constructor namespace path (e.g. ["langchain", "tools", "DynamicTool"])
+ *   tool.kwargs is the constructor kwargs, which usually contains the actual `name`.
+ * Some integrations pass an explicit `runName` as the 7th argument instead.
+ * Older or test paths may pass a plain object with a `name` string.
+ *
+ * Order of preference:
+ *   runName  > tool.kwargs.name  > tool.name (when string)  > tool.id (when string)  > "unknown_tool"
+ */
+function resolveToolName(tool, runName) {
+  if (typeof runName === "string" && runName) return runName;
+  if (tool && typeof tool === "object") {
+    if (tool.kwargs && typeof tool.kwargs.name === "string" && tool.kwargs.name) {
+      return tool.kwargs.name;
+    }
+    if (typeof tool.name === "string" && tool.name) return tool.name;
+    if (typeof tool.id === "string" && tool.id) return tool.id;
+  }
+  return "unknown_tool";
 }
 
 function inferFailureType(err) {
@@ -172,9 +208,9 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
     return this;
   }
 
-  async handleToolStart(tool, input, runId) {
+  async handleToolStart(tool, input, runId, parentRunId, tags, metadata, runName) {
     if (this.disabled) return;
-    const toolName = (tool && (tool.name || tool.id)) || "unknown_tool";
+    const toolName = resolveToolName(tool, runName);
     this._pending.set(runId, {
       start: Date.now(),
       toolName,
@@ -277,3 +313,14 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
 
 module.exports = { XAIPCallbackHandler };
 module.exports.default = XAIPCallbackHandler;
+
+// Internal helpers exposed for tests only. Not part of the stable public API.
+module.exports.__internals = {
+  canonicalize,
+  sha256short,
+  inferFailureType,
+  slugify,
+  resolveToolName,
+  getKeyFile,
+  getLogFile,
+};
