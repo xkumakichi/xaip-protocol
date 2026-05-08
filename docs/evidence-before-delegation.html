@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trust Evidence Before Delegation — XAIP</title>
+  <meta name="description" content="Before an agent delegates work to a tool, it should be able to inspect historical execution evidence from previous signed receipts. A demo of the XAIP trust evidence layer." />
+  <meta property="og:title" content="Trust Evidence Before Delegation — XAIP" />
+  <meta property="og:description" content="Before an agent delegates work to a tool, it should be able to inspect historical execution evidence. A demo of the XAIP trust evidence layer." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #10161d;
+      --panel-2: #161d26;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --border-strong: #30363d;
+      --accent: #58a6ff;
+      --trusted: #3fb950;
+      --caution: #d29922;
+      --low: #f85149;
+      --unscored: #6e7681;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 1040px; margin: 0 auto; padding: 48px 20px 80px; }
+
+    header { margin-bottom: 32px; }
+    h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    .tagline { color: var(--muted); font-size: 15px; margin: 0; }
+    .super { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; font-family: var(--mono); }
+
+    h2 { font-size: 16px; margin: 32px 0 12px; color: var(--fg); }
+    p { color: var(--fg); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: var(--mono); font-size: 13px; }
+
+    .problem {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 24px 0 28px;
+    }
+    .problem p { margin: 0 0 8px; }
+    .problem p:last-child { margin: 0; color: var(--muted); }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0 24px;
+    }
+    @media (max-width: 760px) {
+      .split { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 18px 16px;
+    }
+    .panel-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-head .dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    }
+    .panel.without { border-color: var(--border); }
+    .panel.without .dot { background: var(--unscored); }
+    .panel.with { border-color: var(--border-strong); }
+    .panel.with .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+    .candidate {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .candidate:last-child { margin-bottom: 0; }
+    .candidate .slug {
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .candidate .row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 8px;
+    }
+    .candidate .meta {
+      color: var(--muted);
+      font-size: 11.5px;
+      margin-top: 4px;
+    }
+    .candidate .badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--border);
+    }
+    .badge.trusted { color: var(--trusted); border-color: rgba(63,185,80,0.4); background: rgba(63,185,80,0.08); }
+    .badge.caution { color: var(--caution); border-color: rgba(210,153,34,0.4); background: rgba(210,153,34,0.08); }
+    .badge.low_trust { color: var(--low); border-color: rgba(248,81,73,0.4); background: rgba(248,81,73,0.08); }
+    .badge.unscored { color: var(--unscored); border-color: var(--border-strong); background: var(--panel); }
+
+    .flag {
+      display: inline-block;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+
+    .blank-row {
+      color: var(--muted);
+      opacity: 0.6;
+      font-style: normal;
+    }
+
+    .selected-banner {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(63,185,80,0.4);
+      background: rgba(63,185,80,0.06);
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--fg);
+    }
+    .selected-banner strong { color: var(--trusted); }
+
+    .boundary {
+      border-left: 2px solid var(--accent);
+      padding: 10px 0 10px 16px;
+      margin: 28px 0;
+      color: var(--fg);
+      font-size: 16px;
+    }
+    .boundary .em { color: var(--muted); display: block; margin-top: 4px; font-size: 14px; }
+
+    .cta {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      margin: 24px 0 8px;
+    }
+    .cta a {
+      display: inline-block;
+      padding: 8px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-family: var(--mono);
+      color: var(--fg);
+    }
+    .cta a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .api-note {
+      color: var(--muted);
+      font-size: 13px;
+      font-family: var(--mono);
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .api-note .live-dot {
+      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--unscored);
+    }
+    .api-note.is-live .live-dot {
+      background: var(--trusted);
+      box-shadow: 0 0 6px var(--trusted);
+    }
+    .api-note.is-error .live-dot {
+      background: var(--low);
+    }
+    .api-note .label {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .api-note.is-live .label { color: var(--trusted); }
+    .api-note.is-error .label { color: var(--low); }
+
+    pre {
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 12px 14px; border-radius: 6px; overflow-x: auto;
+      font-size: 12.5px; margin: 8px 0 16px;
+      color: var(--fg);
+    }
+
+    footer {
+      margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="super">XAIP demo</p>
+      <h1>Trust Evidence Before Delegation</h1>
+      <p class="tagline">Not another agent framework. A portable signed receipt layer underneath them.</p>
+    </header>
+
+    <div class="problem">
+      <p>Agents often choose tools without inspecting any historical execution evidence.</p>
+      <p>Three candidate servers can all answer a task. They look interchangeable until you see the receipts behind them.</p>
+    </div>
+
+    <div class="split">
+      <section class="panel without" aria-label="Without XAIP">
+        <p class="panel-head"><span class="dot"></span>Without XAIP</p>
+        <div class="candidate">
+          <div class="row">
+            <span class="slug">memory</span>
+            <span class="badge unscored">no evidence</span>
+          </div>
+          <div class="meta blank-row">no execution history available</div>
+        </div>
+        <div class="candidate">
+          <div class="row">
+            <span class="slug">playwright</span>
+            <span class="badge unscored">no evidence</span>
+          </div>
+          <div class="meta blank-row">no execution history available</div>
+        </div>
+        <div class="candidate">
+          <div class="row">
+            <span class="slug">unknown-server</span>
+            <span class="badge unscored">no evidence</span>
+          </div>
+          <div class="meta blank-row">no execution history available</div>
+        </div>
+        <div class="selected-banner" style="border-color: var(--border-strong); background: var(--panel-2); color: var(--muted);">
+          Selection is blind. Each candidate looks the same.
+        </div>
+      </section>
+
+      <section class="panel with" aria-label="With XAIP">
+        <p class="panel-head"><span class="dot"></span>With XAIP</p>
+
+        <div class="candidate" data-slug="memory">
+          <div class="row">
+            <span class="slug">memory</span>
+            <span class="badge trusted" data-field="badge">trusted</span>
+          </div>
+          <div class="meta" data-field="meta">
+            trust 0.996 &middot; 226 verified receipts
+          </div>
+        </div>
+
+        <div class="candidate" data-slug="playwright">
+          <div class="row">
+            <span class="slug">playwright</span>
+            <span class="badge low_trust" data-field="badge">low_trust</span>
+          </div>
+          <div class="meta" data-field="meta">
+            trust 0.394 &middot; 37 receipts &middot; <span class="flag">high_error_rate</span>
+          </div>
+        </div>
+
+        <div class="candidate" data-slug="unknown-server">
+          <div class="row">
+            <span class="slug">unknown-server</span>
+            <span class="badge unscored" data-field="badge">unscored</span>
+          </div>
+          <div class="meta" data-field="meta">
+            no execution evidence available &middot; <span class="flag">insufficient_data</span>
+          </div>
+        </div>
+
+        <div class="selected-banner" id="selectedBanner">
+          <strong id="selectedSlug">Selected: memory</strong><br />
+          <span id="selectedReason">Only eligible candidate (trust 0.996, 226 verified executions).</span>
+        </div>
+      </section>
+    </div>
+
+    <p class="api-note" id="apiNote">
+      <span class="live-dot"></span>
+      <span class="label" id="apiLabel">Snapshot</span>
+      <span id="apiDetail">Static values shown above. Live API fetch in progress…</span>
+    </p>
+
+    <p class="boundary">
+      XAIP does not make tools safe.
+      <span class="em">It makes execution evidence visible before delegation.</span>
+    </p>
+
+    <h2>Try it yourself</h2>
+    <p>The Trust API is public and zero-auth. Reproduce the response above:</p>
+    <pre><code>curl -X POST https://xaip-trust-api.kuma-github.workers.dev/v1/select \
+  -H "Content-Type: application/json" \
+  -d '{"task":"Store and retrieve user notes","candidates":["memory","playwright","unknown-server"]}'</code></pre>
+
+    <p>Receipts come from MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes. The receipt format is provider-neutral.</p>
+
+    <h2>Next</h2>
+    <div class="cta">
+      <a href="./index.html">Live trust graph</a>
+      <a href="https://github.com/xkumakichi/xaip-protocol">README &amp; spec</a>
+      <a href="./playground.html">Browser playground</a>
+    </div>
+
+    <footer>
+      <a href="https://github.com/xkumakichi/xaip-protocol">GitHub</a>
+      <a href="https://www.npmjs.com/package/xaip-claude-hook">xaip-claude-hook</a>
+      <a href="https://www.npmjs.com/package/xaip-langchain">xaip-langchain</a>
+      <a href="https://www.npmjs.com/package/xaip-openai">xaip-openai</a>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      var API = "https://xaip-trust-api.kuma-github.workers.dev/v1/select";
+      var BODY = {
+        task: "Store and retrieve user notes",
+        candidates: ["memory", "playwright", "unknown-server"]
+      };
+
+      var noteEl = document.getElementById("apiNote");
+      var labelEl = document.getElementById("apiLabel");
+      var detailEl = document.getElementById("apiDetail");
+      var selectedSlug = document.getElementById("selectedSlug");
+      var selectedReason = document.getElementById("selectedReason");
+
+      function fmtTrust(t) {
+        if (t === null || t === undefined) return "—";
+        return (Math.round(t * 1000) / 1000).toFixed(3);
+      }
+
+      function escapeText(s) {
+        return String(s == null ? "" : s);
+      }
+
+      function renderCandidate(slug, c) {
+        var card = document.querySelector('.candidate[data-slug="' + slug + '"]');
+        if (!card) return;
+        var badge = card.querySelector('[data-field="badge"]');
+        var meta = card.querySelector('[data-field="meta"]');
+        if (!badge || !meta) return;
+
+        var verdict = c && c.verdict ? c.verdict : "unscored";
+        badge.className = "badge " + verdict;
+        badge.textContent = verdict;
+
+        // Build meta line.
+        if (verdict === "unscored") {
+          var unscoredHtml = "no execution evidence available";
+          if (c && c.riskFlags && c.riskFlags.length) {
+            unscoredHtml += " &middot; " + c.riskFlags.map(function (f) {
+              return '<span class="flag">' + escapeText(f) + "</span>";
+            }).join(" ");
+          }
+          meta.innerHTML = unscoredHtml;
+          return;
+        }
+
+        var trustStr = "trust " + fmtTrust(c.trust);
+        var receiptsStr = (c.receipts || 0) + " " + ((c.receipts === 1) ? "receipt" : "receipts");
+        var parts = [trustStr, receiptsStr];
+        var html = parts.join(" &middot; ");
+        if (c.riskFlags && c.riskFlags.length) {
+          html += " &middot; " + c.riskFlags.map(function (f) {
+            return '<span class="flag">' + escapeText(f) + "</span>";
+          }).join(" ");
+        }
+        meta.innerHTML = html;
+      }
+
+      function setStatusError(msg) {
+        if (!noteEl) return;
+        noteEl.classList.remove("is-live");
+        noteEl.classList.add("is-error");
+        labelEl.textContent = "Snapshot";
+        detailEl.textContent = "Live fetch failed (" + msg + "). Showing last verified static values.";
+      }
+
+      function setStatusLive(ts) {
+        if (!noteEl) return;
+        noteEl.classList.remove("is-error");
+        noteEl.classList.add("is-live");
+        labelEl.textContent = "Live";
+        var when = ts ? new Date(ts) : new Date();
+        var hh = String(when.getUTCHours()).padStart(2, "0");
+        var mm = String(when.getUTCMinutes()).padStart(2, "0");
+        detailEl.innerHTML =
+          "Fetched live from <code>POST /v1/select</code> at " +
+          hh + ":" + mm + " UTC. Values shift as new signed receipts arrive.";
+      }
+
+      function fetchLive() {
+        return fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(BODY)
+        }).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        });
+      }
+
+      // Kick off live fetch.
+      fetchLive().then(function (data) {
+        if (!data || !Array.isArray(data.candidates)) {
+          setStatusError("malformed response");
+          return;
+        }
+
+        var bySlug = {};
+        data.candidates.forEach(function (c) { bySlug[c.slug] = c; });
+        BODY.candidates.forEach(function (slug) {
+          renderCandidate(slug, bySlug[slug] || { verdict: "unscored", riskFlags: ["insufficient_data"] });
+        });
+
+        if (data.selected) {
+          selectedSlug.textContent = "Selected: " + data.selected;
+        } else {
+          selectedSlug.textContent = "No eligible candidate";
+        }
+        if (data.reason) {
+          selectedReason.textContent = data.reason;
+        }
+
+        setStatusLive(data.timestamp);
+      }).catch(function (err) {
+        setStatusError(err && err.message ? err.message : "network");
+      });
+    })();
+  </script>
+</body>
+</html>
