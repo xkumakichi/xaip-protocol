@@ -2,7 +2,7 @@
 
 > Your AI agent picks tools blind. XAIP gives it eyes.
 
-When an AI agent delegates work to an external tool, it has no idea whether that tool will succeed, fail silently, or burn latency. XAIP fixes this with cryptographically signed execution receipts, Bayesian trust scoring, and a decision engine that picks the best candidate — live, right now.
+When an AI agent delegates work to an external tool, it has no idea whether that tool will succeed, fail silently, or burn latency. XAIP addresses this with signed execution receipts, behavior-derived trust signals, and a query API that agents can consult before choosing a tool.
 
 **Provider-agnostic by design.** XAIP is a trust layer for any tool-using agent. The reference implementation and live data start with **MCP** (Model Context Protocol) — because that's where the broadest fleet of public tool servers exists today — but the receipt format, signing, and scoring apply equally to LangChain tools, OpenAI function calling, A2A, and proprietary agent stacks. MCP is the first integration, not the only one.
 
@@ -42,7 +42,7 @@ The `/v1/select` response tells you which server to use, why, and what would hap
   "selected": "context7",
   "reason": "Highest trust among scored candidates based on current verified receipts",
   "rejected": [{ "slug": "unknown-server", "reason": "unscored — no execution data" }],
-  "withoutXAIP": "Random selection would pick an unscored server 33% of the time — no execution data, no safety guarantee"
+  "withoutXAIP": "Random selection would pick an unscored server 33% of the time — no execution evidence available"
 }
 ```
 
@@ -60,7 +60,7 @@ Without trust scores, your agent is gambling:
 └────────────────┴────────────────┴───────────┴──────────────┘
 ```
 
-XAIP selects the right server on the first try, skips unscored servers, and saves your agent from wasted calls and silent failures.
+XAIP helps agents prefer candidates with stronger available execution evidence, skip unscored candidates when appropriate, and reduce avoidable failed calls.
 
 ## How It Works
 
@@ -244,17 +244,21 @@ npm: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - Cloudflare D1 (SQLite at edge) for receipt storage
 - Service Bindings for Worker-to-Worker communication
 
-## XRPL Integration
+## Optional Ledger-Backed Identity
 
-XAIP supports `did:xrpl` identities with higher trust priors than anonymous `did:key`:
+XAIP is not a blockchain protocol and not a payment rail.
 
-| DID Method | Trust Prior | Use Case |
+The current identity model supports multiple DID methods, including `did:key`, `did:web`, and ledger-backed identifiers such as `did:xrpl`. Trust scores are derived from signed execution receipts — not token holdings, payments, or chain affiliation.
+
+The default priors below are deployment policy, not a universal claim about trust:
+
+| DID Method | Default Prior | Use Case |
 |------------|------------|----------|
-| `did:xrpl` | [5, 1] | XRPL account-backed agents |
+| `did:xrpl` | [5, 1] | Ledger-backed agents (one externally anchored option) |
 | `did:web` | [2, 1] | Domain-verified servers |
 | `did:key` | [1, 1] | Anonymous / new agents |
 
-XRPL's native DID support (XLS-40) makes it a natural foundation for agent identity in autonomous transactions.
+Ledger-backed identities may be useful when an agent needs an externally anchored identity. XAIP itself does not require any ledger.
 
 ## Data
 
@@ -271,12 +275,12 @@ curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
 
 ## Works With
 
-| Provider | Status | How |
+| Runtime / integration | Status | How |
 |---|---|---|
-| **MCP** (Model Context Protocol) | ✅ live | `xaip-claude-hook` for Claude Code; `xaip-sdk` for any MCP client; 10 servers scored, ~2,600 signed receipts as of 2026-04-24 |
-| **LangChain** | ✅ published preview | `xaip-langchain` receipt producer for LangChain.js tool calls |
-| **OpenAI tool calling** | ✅ published preview | `xaip-openai` receipt producer for OpenAI-compatible tool-call loops |
-| **A2A / proprietary** | ✅ supported | Use `xaip-sdk` directly — receipt format is provider-neutral |
+| **MCP** (Model Context Protocol) | Live public dataset (10 servers, ~2,600 signed receipts as of 2026-04-24) | `xaip-claude-hook`, `xaip-sdk`, `xaip-mcp-trust` |
+| **LangChain.js** | Tested preview + live receipts landed | [`xaip-langchain`](https://www.npmjs.com/package/xaip-langchain) callback handler |
+| **OpenAI-compatible tool-call loops** | Tested preview + live receipts landed | [`xaip-openai`](https://www.npmjs.com/package/xaip-openai) wrapper |
+| **HTTP tools / A2A / proprietary runtimes** | Supported receipt flow | `xaip-sdk` or direct signed receipt emission |
 
 The receipt schema is intentionally tool-system-agnostic: `agentDid`, `callerDid`, `taskHash`, `resultHash`, `success`, `latencyMs`, `failureType`, `timestamp`. Any agent framework that can hash inputs/outputs and sign with Ed25519 can contribute receipts.
 
@@ -284,7 +288,10 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 
 ## Status
 
-**v0.4.0** live; **v0.5 Release Candidate** open for review (adds tool class taxonomy with settlement-layer support).
+**v0.4.0** live; **v0.5 draft** in development (tool class taxonomy + observation/display plumbing).
+
+- v0.5 class metadata plumbing is live for observation/display.
+- Class-aware scoring remains a design note and is not used by current trust scores or `/v1/select` selection behavior.
 
 - [x] Trust Score API (Cloudflare Worker, live)
 - [x] Decision Engine (`POST /v1/select`)
@@ -296,10 +303,10 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 - [x] Published preview receipt producers: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 - [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
-- [x] v0.5 draft: tool class taxonomy + class-aware risk evaluation design
+- [x] v0.5 specification draft (tool class taxonomy; class-aware scoring is a design note only)
 - [x] Multi-caller diversity mechanism verified ([2+ caller identities, metric responds across 8 servers](./docs/contributor/caller-diversity-verification.md))
-- [ ] v0.5 class metadata plumbing
-- [ ] Class-aware risk evaluation in aggregator
+- [x] v0.5 class metadata plumbing (observation/display only — does not affect scoring or `/v1/select`)
+- [ ] Class-aware scoring (design note only — not live behavior)
 - [x] Zero-install caller path: [`npx xaip-caller`](./clients/caller/) (30-second first contribution, demonstrates XAIP beyond MCP)
 - [ ] External operator callers (mechanism live, external adoption pending — run `npx xaip-caller` or the [full guide](./docs/contributor/run-a-caller.md))
 
