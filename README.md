@@ -6,6 +6,10 @@ XAIP is a provider-neutral signed execution evidence layer for AI agent tool cal
 
 Receipts are the primary artifact. Trust scores are one derived view over those receipts — not a claim of absolute safety or correctness.
 
+[![Trust Evidence Before Delegation — XAIP demo](./docs/evidence-before-delegation.gif)](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)
+
+*Live demo: three candidate servers, side-by-side comparison without and with XAIP. [Open in browser →](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)*
+
 **Provider-agnostic by design.** XAIP is a trust layer for any tool-using agent. The reference implementation and live data start with **MCP** (Model Context Protocol) — because that's where the broadest fleet of public tool servers exists today — but the receipt format, signing, and scoring apply equally to LangChain tools, OpenAI function calling, A2A, and proprietary agent stacks. MCP is the first integration, not the only one.
 
 **Live dashboard:** https://xkumakichi.github.io/xaip-protocol/ — current public trust scores, auto-refreshed, no auth. The current public dataset is MCP-heavy because MCP was the first integration target.
