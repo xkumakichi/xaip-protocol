@@ -36,7 +36,7 @@ curl https://xaip-trust-api.kuma-github.workers.dev/v1/trust/context7
 # Batch query
 curl "https://xaip-trust-api.kuma-github.workers.dev/v1/trust?slugs=context7,sequential-thinking,filesystem"
 
-# Decision engine: pick the best server for a task
+# Decision engine: rank candidates by available execution evidence
 curl -X POST https://xaip-trust-api.kuma-github.workers.dev/v1/select \
   -H "Content-Type: application/json" \
   -d '{"task":"Fetch React docs","candidates":["context7","sequential-thinking","unknown-server"]}'
@@ -91,7 +91,7 @@ npx tsx dogfood.ts
 ```
 
 This demo:
-1. Asks XAIP to select the best server for "Fetch React hooks documentation"
+1. Asks XAIP to rank candidate servers for "Fetch React hooks documentation" by available execution evidence
 2. Connects to the selected MCP server and executes real tool calls
 3. Submits a signed execution receipt to the Aggregator
 4. Shows the updated trust score
@@ -146,7 +146,7 @@ import { XAIPClient } from "xaip-sdk";
 
 const client = new XAIPClient();
 
-// Pick the best server
+// Rank candidates by available execution evidence
 const decision = await client.select({
   task: "Fetch React documentation",
   candidates: ["context7", "sequential-thinking", "unknown-server"],
