@@ -389,7 +389,7 @@ async function buildSelectResponse(
       slug: c.slug,
       reason:
         c.verdict === "unscored"
-          ? "unscored — no execution data"
+          ? "unscored — no execution evidence available"
           : `low trust (${c.trust}) — below threshold`,
     }));
 
@@ -406,7 +406,7 @@ async function buildSelectResponse(
   let withoutXAIP: string;
   if (unscoredCount > 0) {
     const pct = Math.round((unscoredCount / total) * 100);
-    withoutXAIP = `Random selection would pick an unscored server ${pct}% of the time — no execution data, no safety guarantee`;
+    withoutXAIP = `Random selection would pick an unscored server ${pct}% of the time — no execution evidence available`;
   } else if (rejected.length > 0) {
     withoutXAIP = `Random selection would include ${rejected.length} low-trust server(s) — XAIP ranked them out automatically`;
   } else {

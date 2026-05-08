@@ -1,8 +1,10 @@
 # XAIP — Trust Infrastructure for AI Agents
 
-> Your AI agent picks tools blind. XAIP gives it eyes.
+> Not another agent framework. A portable signed receipt layer underneath them.
 
-When an AI agent delegates work to an external tool, it has no idea whether that tool will succeed, fail silently, or burn latency. XAIP addresses this with signed execution receipts, behavior-derived trust signals, and a query API that agents can consult before choosing a tool.
+XAIP is a provider-neutral signed execution evidence layer for AI agent tool calls. It records signed receipts across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes, then exposes historical execution evidence that agents, developers, or policy layers can inspect before delegation.
+
+Receipts are the primary artifact. Trust scores are one derived view over those receipts — not a claim of absolute safety or correctness.
 
 **Provider-agnostic by design.** XAIP is a trust layer for any tool-using agent. The reference implementation and live data start with **MCP** (Model Context Protocol) — because that's where the broadest fleet of public tool servers exists today — but the receipt format, signing, and scoring apply equally to LangChain tools, OpenAI function calling, A2A, and proprietary agent stacks. MCP is the first integration, not the only one.
 
@@ -41,7 +43,7 @@ The `/v1/select` response tells you which server to use, why, and what would hap
 {
   "selected": "context7",
   "reason": "Highest trust among scored candidates based on current verified receipts",
-  "rejected": [{ "slug": "unknown-server", "reason": "unscored — no execution data" }],
+  "rejected": [{ "slug": "unknown-server", "reason": "unscored — no execution evidence available" }],
   "withoutXAIP": "Random selection would pick an unscored server 33% of the time — no execution evidence available"
 }
 ```
@@ -65,7 +67,7 @@ XAIP helps agents prefer candidates with stronger available execution evidence, 
 ## How It Works
 
 ```
-1. Select    POST /v1/select → picks the best server from candidates
+1. Select    POST /v1/select → ranks candidates by available execution evidence
 2. Execute   Your agent calls the selected tool server
 3. Report    POST /receipts → signed execution receipt feeds back into trust scores
 ```
@@ -181,7 +183,7 @@ npm: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
 | `GET` | `/v1/servers` | List all scored servers with trust data |
 | `GET` | `/v1/trust/:slug` | Trust score for a single scored server |
 | `GET` | `/v1/trust?slugs=a,b,c` | Batch trust scores (max 50) |
-| `POST` | `/v1/select` | Decision engine — pick best candidate for a task |
+| `POST` | `/v1/select` | Decision engine — rank candidates by available execution evidence |
 | `GET` | `/health` | Liveness probe |
 
 **Base URL:** `https://xaip-trust-api.kuma-github.workers.dev`
