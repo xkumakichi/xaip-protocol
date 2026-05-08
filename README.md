@@ -7,6 +7,7 @@ XAIP is a provider-neutral signed execution evidence layer for AI agent tool cal
 Receipts are the primary artifact. Trust scores are one derived view over those receipts — not a claim of absolute safety or correctness.
 
 [![Trust Evidence Before Delegation — XAIP demo](./docs/evidence-before-delegation.gif)](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)
+[![SafeSkill 50/100](https://img.shields.io/badge/SafeSkill-50%2F100_Use%20with%20Caution-orange)](https://safeskill.dev/scan/xkumakichi-xaip-protocol)
 
 *Live demo: three candidate servers, side-by-side comparison without and with XAIP. [Open in browser →](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)*
 
