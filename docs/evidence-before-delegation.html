@@ -275,10 +275,10 @@
         <div class="candidate" data-slug="memory">
           <div class="row">
             <span class="slug">memory</span>
-            <span class="badge trusted" data-field="badge">trusted</span>
+            <span class="badge trusted" data-field="badge">evidence-backed</span>
           </div>
           <div class="meta" data-field="meta">
-            trust 0.996 &middot; 226 verified receipts
+            trust 0.996 &middot; 226 signed receipts
           </div>
         </div>
 
@@ -288,7 +288,7 @@
             <span class="badge low_trust" data-field="badge">low_trust</span>
           </div>
           <div class="meta" data-field="meta">
-            trust 0.394 &middot; 37 receipts &middot; <span class="flag">high_error_rate</span>
+            trust 0.394 &middot; 37 signed receipts &middot; <span class="flag">high_error_rate</span>
           </div>
         </div>
 
@@ -304,7 +304,7 @@
 
         <div class="selected-banner" id="selectedBanner">
           <strong id="selectedSlug">Selected: memory</strong><br />
-          <span id="selectedReason">Only eligible candidate (trust 0.996, 226 verified executions).</span>
+          <span id="selectedReason">Selected using available execution evidence: trust 0.996, 226 signed receipts.</span>
         </div>
       </section>
     </div>
@@ -366,6 +366,62 @@
         return String(s == null ? "" : s);
       }
 
+      // Display-layer mapping: API verdict label -> demo badge text.
+      // Underlying API field stays "trusted"; we only soften the user-facing label
+      // to align with the "evidence, not safety" framing.
+      var BADGE_TEXT = {
+        trusted: "evidence-backed",
+        caution: "caution",
+        low_trust: "low_trust",
+        unscored: "unscored"
+      };
+
+      // Safe DOM construction helpers (no innerHTML, no string-built markup).
+      function clearChildren(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+      }
+
+      function appendText(node, s) {
+        node.appendChild(document.createTextNode(s));
+      }
+
+      function appendFlag(node, label) {
+        var span = document.createElement("span");
+        span.className = "flag";
+        span.textContent = String(label == null ? "" : label);
+        node.appendChild(span);
+      }
+
+      function appendSeparator(node) {
+        appendText(node, " · ");
+      }
+
+      function renderMeta(meta, verdict, c) {
+        clearChildren(meta);
+
+        if (verdict === "unscored") {
+          appendText(meta, "no execution evidence available");
+          if (c && c.riskFlags && c.riskFlags.length) {
+            c.riskFlags.forEach(function (f) {
+              appendSeparator(meta);
+              appendFlag(meta, f);
+            });
+          }
+          return;
+        }
+
+        var receipts = c && c.receipts ? c.receipts : 0;
+        appendText(meta, "trust " + fmtTrust(c && c.trust));
+        appendSeparator(meta);
+        appendText(meta, receipts + " signed " + (receipts === 1 ? "receipt" : "receipts"));
+        if (c && c.riskFlags && c.riskFlags.length) {
+          c.riskFlags.forEach(function (f) {
+            appendSeparator(meta);
+            appendFlag(meta, f);
+          });
+        }
+      }
+
       function renderCandidate(slug, c) {
         var card = document.querySelector('.candidate[data-slug="' + slug + '"]');
         if (!card) return;
@@ -375,30 +431,9 @@
 
         var verdict = c && c.verdict ? c.verdict : "unscored";
         badge.className = "badge " + verdict;
-        badge.textContent = verdict;
+        badge.textContent = BADGE_TEXT[verdict] || verdict;
 
-        // Build meta line.
-        if (verdict === "unscored") {
-          var unscoredHtml = "no execution evidence available";
-          if (c && c.riskFlags && c.riskFlags.length) {
-            unscoredHtml += " &middot; " + c.riskFlags.map(function (f) {
-              return '<span class="flag">' + escapeText(f) + "</span>";
-            }).join(" ");
-          }
-          meta.innerHTML = unscoredHtml;
-          return;
-        }
-
-        var trustStr = "trust " + fmtTrust(c.trust);
-        var receiptsStr = (c.receipts || 0) + " " + ((c.receipts === 1) ? "receipt" : "receipts");
-        var parts = [trustStr, receiptsStr];
-        var html = parts.join(" &middot; ");
-        if (c.riskFlags && c.riskFlags.length) {
-          html += " &middot; " + c.riskFlags.map(function (f) {
-            return '<span class="flag">' + escapeText(f) + "</span>";
-          }).join(" ");
-        }
-        meta.innerHTML = html;
+        renderMeta(meta, verdict, c);
       }
 
       function setStatusError(msg) {
@@ -417,9 +452,13 @@
         var when = ts ? new Date(ts) : new Date();
         var hh = String(when.getUTCHours()).padStart(2, "0");
         var mm = String(when.getUTCMinutes()).padStart(2, "0");
-        detailEl.innerHTML =
-          "Fetched live from <code>POST /v1/select</code> at " +
-          hh + ":" + mm + " UTC. Values shift as new signed receipts arrive.";
+
+        clearChildren(detailEl);
+        appendText(detailEl, "Fetched live from ");
+        var code = document.createElement("code");
+        code.textContent = "POST /v1/select";
+        detailEl.appendChild(code);
+        appendText(detailEl, " at " + hh + ":" + mm + " UTC. Values shift as new signed receipts arrive.");
       }
 
       function fetchLive() {
@@ -448,11 +487,21 @@
 
         if (data.selected) {
           selectedSlug.textContent = "Selected: " + data.selected;
+          // Build our own reason text from API data instead of using data.reason verbatim,
+          // so phrasing stays aligned with the "available execution evidence" framing.
+          var winner = bySlug[data.selected];
+          if (winner && winner.trust !== null && winner.trust !== undefined) {
+            var winnerReceipts = winner.receipts || 0;
+            var noun = (winnerReceipts === 1) ? "receipt" : "receipts";
+            selectedReason.textContent =
+              "Selected using available execution evidence: trust " +
+              fmtTrust(winner.trust) + ", " + winnerReceipts + " signed " + noun + ".";
+          } else if (data.reason) {
+            selectedReason.textContent = data.reason;
+          }
         } else {
-          selectedSlug.textContent = "No eligible candidate";
-        }
-        if (data.reason) {
-          selectedReason.textContent = data.reason;
+          selectedSlug.textContent = "No candidate with available execution evidence";
+          if (data.reason) selectedReason.textContent = data.reason;
         }
 
         setStatusLive(data.timestamp);
