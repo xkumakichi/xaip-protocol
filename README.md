@@ -20,6 +20,7 @@ Receipts are the primary artifact. Trust scores are one derived view over those 
 - [Browser playground](./docs/playground.html) — read-only demo of trust-aware selection.
 - [60-second overview](./docs/agent-trust-overview.md) — the problem XAIP is trying to address.
 - [Future direction](./docs/future-direction.md) — long-term hypothesis, open questions, and current research asks.
+- [Single-caller dominance case study](./docs/case-study/single-caller-dominance.md) — a real failure mode surfaced in XAIP's own public dataset on 2026-05-13, and what it implies for caller diversity.
 - [Agent Trust Check design](./docs/agent-trust-check-design.md) — planned diagnostic concept.
 - [Class-aware scoring design](./docs/class-aware-scoring-design.md) — future design note; not live scoring behavior.
 - [Emit receipts from anything](./docs/emit-from-anything.md) — how to produce XAIP receipts from any tool system.
@@ -327,7 +328,7 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 - [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust) — MCP server for AI agents to check trust scores
 - [xaip-langchain](https://www.npmjs.com/package/xaip-langchain) — LangChain.js callback handler that emits XAIP receipts
 - [xaip-openai](https://www.npmjs.com/package/xaip-openai) — OpenAI tool-calling wrapper with signed receipts
-- [Veridict](https://github.com/xkumakichi/veridict) — AI agent trust decision layer (runtime monitoring)
+- [Veridict](https://github.com/xkumakichi/veridict) — MCP runtime monitor that emits XAIP-compatible receipts (folded into XAIP as a runtime data source; not maintained as an independent product)
 - [XAIP Specification v0.4](./XAIP-SPEC.md) — Current protocol specification
 - [XAIP Specification v0.5 RC](./XAIP-SPEC-v0.5-DRAFT.md) — Release candidate (tool class taxonomy)
 
