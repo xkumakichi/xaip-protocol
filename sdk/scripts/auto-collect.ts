@@ -330,17 +330,16 @@ async function runContext7(
   for (let i = 0; i < 2; i++) {
     const libraryId = idsToUse[i % idsToUse.length]!;
     const query = docQueries[i]!;
-    const { ok, result, latencyMs } = await callTool(client, "get-library-docs", {
-      context7CompatibleLibraryID: libraryId,
-      topic: query,
-      tokens: 3000,
+    const { ok, result, latencyMs } = await callTool(client, "query-docs", {
+      libraryId,
+      query,
     });
     calls++;
     if (ok) successes++; else failures++;
     const post = await postReceipt({
       agentKp, callerKp,
-      toolName: "get-library-docs",
-      taskInput: { context7CompatibleLibraryID: libraryId, topic: query },
+      toolName: "query-docs",
+      taskInput: { libraryId, query },
       result,
       success: ok,
       latencyMs,
@@ -543,10 +542,10 @@ async function runFetch(
 ): Promise<{ calls: number; successes: number; failures: number; receiptsPosted: number; receiptsFailed: number }> {
   let calls = 0, successes = 0, failures = 0, receiptsPosted = 0, receiptsFailed = 0;
 
-  // get_raw_text — JSON/text endpoints
+  // get_raw_text — plain text endpoints (not JSON; axios auto-parses JSON which breaks MCP text field)
   for (const url of [
-    "https://xaip-trust-api.kuma-github.workers.dev/health",
-    "https://jsonplaceholder.typicode.com/posts/1",
+    "https://raw.githubusercontent.com/xkumakichi/xaip-protocol/main/LICENSE",
+    "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/README.md",
   ]) {
     const args = { url };
     const { ok, result, latencyMs } = await callTool(client, "get_raw_text", args);
