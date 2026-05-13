@@ -11,5 +11,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: cd sdk && npm install
+      - run: cd sdk && npm ci
       - run: cd sdk && npx tsx scripts/auto-collect.ts
