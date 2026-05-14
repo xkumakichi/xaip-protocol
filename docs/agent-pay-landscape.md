@@ -432,32 +432,18 @@
 
 ---
 
-## XAIP の attach 戦略候補（リサーチ結果から導出）
+## XAIP の発信レイヤー（chain-neutral）
 
-### ターゲット優先順位
+XAIP の設計原則は **チェーン非依存**。発信は単一チェーンのコミュニティではなく、**中立な標準化レイヤーと自前 channel** に限定する。チェーン側のプロジェクト（ERC-8004, XRPL trust registries, その他）が興味を持った場合、向こうが中立 spec を参照する形を想定する。こちらから特定チェーンのコミュニティに出向くことはしない。
 
-| 優先度 | ターゲット | 理由 | アクション |
-|---|---|---|---|
-| **1位** | **ERC-8004 コミュニティ** | `supportedTrust` が拡張可能文字列、`proofOfPayment` が既定義、`appendResponse()` が open — XAIP が直接 plug-in できる構造が既にある | ethereum-magicians.org に XAIP trust model の提案を投稿 |
-| **2位** | **Lyrie ATP / draft-sharif（IETF individual drafts）** | WG なし = author の裁量で spec に反映可能。今が一番フラットな窓。XAIP の signed receipt が trust score の evidence として引用されうる | author に GitHub / email で direct contact（text-only） |
-| **3位** | **Mastercard Verifiable Intent（GitHub）** | v0.1 draft で Issues 12件。Layer 2 の `constraints` フィールドに XAIP score を条件追加する RFC を提案 | GitHub Issues で Extension RFC draft を投稿 |
-| **4位** | **ACP Extensions Framework** | RFC 形式で trust attestation extension を提案可能。Stripe + OpenAI という実装力。acp@stripe.com にメールで contributor 申請 | 先に仕様を書いて GitHub PR で提案 |
-| **5位** | **W3C Agentic Integrity Verification Spec CG** | XAIP の「session record の cryptographic proof」コンセプトと最も近い。CG 発足の supporter になる | W3C アカウントで support ボタン → 発足後に spec contributor に |
-| **6位** | **x402 lifecycle hooks** | payment flow 後に XAIP receipt 生成を hook で実行するサンプル実装を publish → x402 ecosystem ページに掲載申請 | CONTRIBUTING.md の ecosystem project 追加基準を満たす実装を作る |
+### 中立レイヤーでの発信先
 
-### 最初の text outreach を送るべき場所
-
-以下を **この順番で** 実行することを推奨。全て text-only で完結。
-
-1. **ethereum-magicians.org の ERC-8004 スレッド** (https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098) に「XAIP signed receipt を `supportedTrust: ["xaip-signed-receipt"]` として登録する提案」を投稿。返答が来たら GitHub Issue に移行。
-
-2. **draft-sharif-agent-payment-trust の author**（contact@agentsign.dev）に、XAIP の trust evidence を draft の外部 evidence reference として追加する提案メール。
-
-3. **github.com/agent-intent/verifiable-intent の Issues** に、Verifiable Intent Layer 2 の `constraints` に XAIP trust score を条件として追加する RFC 草稿を投稿。
-
-4. **W3C Agentic Integrity Verification Spec CG** の support ボタンを押してから、発足後の mailing list で XAIP の signed receipt spec を contribution として提案。
-
-5. **acp@stripe.com** に contributor 申請 + trust attestation extension RFC の草稿を添付。
+| レイヤー | 場所 | 期待される到達 |
+|---|---|---|
+| **IETF individual draft** | datatracker.ietf.org | プロトコル設計者全体（チェーン非依存）。citable URL を確保 |
+| **W3C Community Group** | w3.org の Agentic Integrity Verification Spec CG (提案中) | Web 標準コミュニティ。AI agent integrity 領域に最も近い枠 |
+| **自前 channel** | dev.to / Zenn / 自分の repo | チェーン色なしの記事として書く。検索で辿り着いた人が読む |
+| **個別 IETF draft author** との text 対話 | draft-sharif / Lyrie ATP author など | individual draft 同士の相互参照。author の裁量で進む |
 
 ### 独立 spec として publish するなら IETF か W3C か
 
@@ -487,7 +473,7 @@
 
 5. **draft-sharif の trust score と XAIP の Bayesian score の互換性**: sharif draft は 5次元均等重み付け（各 20%）、XAIP は caller diversity weighting を持つ Bayesian model。両者の相互参照可能性（XAIP score を sharif の trust score input として使う）は、technical レビューが必要。
 
-6. **ERC-8004 の `supportedTrust` 拡張登録プロセス**: spec には「開発者が追加可能」と書かれているが、registry（on-chain or off-chain）で値を管理する公式プロセスがあるかは ethereum-magicians のスレッドで確認が必要。
+6. **ERC-8004 の `supportedTrust` 拡張登録プロセス**: spec には「開発者が追加可能」と書かれているが、registry（on-chain or off-chain）で値を管理する公式プロセスがあるかは未確認。chain-neutral 方針のため、こちらから ERC-8004 コミュニティに照会することはしない。中立 spec として IETF/W3C にエントリが published されれば、関心がある実装者が向こうから参照する経路を期待する。
 
 7. **Lyrie ATP との競合・協調**: XAIP の signed receipt と Lyrie ATP の 5プリミティブは役割が重複する部分がある（Attestation、特に）。Lyrie.ai が IETF に提出した際に competing draft vs. complementary spec のどちらのスタンスを取るかは戦略上の決断が必要。
 
