@@ -318,6 +318,15 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 - [x] Zero-install caller path: [`npx xaip-caller`](./clients/caller/) (30-second first contribution, demonstrates XAIP beyond MCP)
 - [ ] External operator callers (mechanism live, external adoption pending — run `npx xaip-caller` or the [full guide](./docs/contributor/run-a-caller.md))
 
+## Internet-Draft
+
+The XAIP receipt wire format is published as an individual Internet-Draft on IETF Datatracker:
+
+- `draft-xkumakichi-xaip-receipts-00`
+- <https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/>
+
+This is an individual Internet-Draft. It is not an IETF standard, not IETF-approved, and has no formal standing in the IETF standards process. The draft scope is the receipt wire format only — scoring, aggregation, and decision logic are deployment policy and out of scope of the draft itself.
+
 ## Writing
 
 - **Portable Trust** — why trust infrastructure for AI agents must be provider-neutral and behavior-derived ([dev.to](https://dev.to/xkumakichi/portable-trust-o4o) · [Zenn 日本語版](https://zenn.dev/xkumakichi/articles/e93a438265a682))
