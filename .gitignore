@@ -20,11 +20,9 @@ fed-agg-*.db
 # Secrets
 scripts/claude-identity.json
 
-# Tools (local binaries & tokens)
-tools/mcp-publisher.exe
-tools/mcp-publisher.tar.gz
-tools/.mcp_publisher_token
-tools/awesome-mcp-servers/
+# Tools (local binaries & tokens) — entire directory is local-only.
+# If you need to track something here, use `git add -f <path>`.
+tools/
 
 # Private outreach notes (not for public repo)
 docs/outreach/
