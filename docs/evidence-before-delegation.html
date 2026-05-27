@@ -312,19 +312,22 @@
     <p class="api-note" id="apiNote">
       <span class="live-dot"></span>
       <span class="label" id="apiLabel">Snapshot</span>
-      <span id="apiDetail">Static values shown above. Live API fetch in progress…</span>
+      <span id="apiDetail">Static values shown above. Live precheck in progress…</span>
     </p>
 
     <p class="boundary">
       XAIP does not make tools safe.
-      <span class="em">It makes execution evidence visible before delegation.</span>
+      <span class="em">It is not a sandbox, not an approval engine, and not a payment rail. It does not guarantee trust. It makes execution evidence visible before delegation.</span>
     </p>
 
     <h2>Try it yourself</h2>
-    <p>The Trust API is public and zero-auth. Reproduce the response above:</p>
-    <pre><code>curl -X POST https://xaip-trust-api.kuma-github.workers.dev/v1/select \
-  -H "Content-Type: application/json" \
-  -d '{"task":"Store and retrieve user notes","candidates":["memory","playwright","unknown-server"]}'</code></pre>
+    <p>The SDK exposes the same evidence-before-delegation path with <code>precheck()</code>:</p>
+    <pre><code>import { precheck } from "xaip-sdk";
+
+const result = await precheck({
+  task: "Store and retrieve user notes",
+  candidates: ["memory", "playwright", "unknown-server"]
+});</code></pre>
 
     <p>Receipts come from MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes. The receipt format is provider-neutral.</p>
 
@@ -345,7 +348,9 @@
 
   <script>
     (function () {
-      var API = "https://xaip-trust-api.kuma-github.workers.dev/v1/select";
+      var DEFAULT_TRUST_API_ENDPOINT = "https://xaip-trust-api.kuma-github.workers.dev";
+      var REASON_SELECTED = "Selected using available execution evidence.";
+      var REASON_NO_ELIGIBLE = "No eligible candidates based on available execution evidence.";
       var BODY = {
         task: "Store and retrieve user notes",
         candidates: ["memory", "playwright", "unknown-server"]
@@ -364,6 +369,101 @@
 
       function escapeText(s) {
         return String(s == null ? "" : s);
+      }
+
+      function computeEligibility(candidate, policy, rejectedSlugs) {
+        if (rejectedSlugs[candidate.slug]) return false;
+        if (candidate.verdict === "unscored") return false;
+        if ((candidate.receipts || 0) < policy.minReceipts) return false;
+        if (policy.excludeRiskFlags.length > 0) {
+          var flags = candidate.riskFlags || [];
+          for (var i = 0; i < flags.length; i += 1) {
+            if (policy.excludeRiskFlags.indexOf(flags[i]) !== -1) return false;
+          }
+        }
+        return true;
+      }
+
+      function deriveDecision(ranked) {
+        var anyEligible = ranked.some(function (c) { return c.eligible; });
+        if (anyEligible) return "allow";
+        var allUnscored = ranked.every(function (c) { return c.verdict === "unscored"; });
+        return allUnscored ? "unknown" : "warn";
+      }
+
+      // Browser-local equivalent of xaip-sdk@0.5.0 precheck().
+      // The published SDK is Node/CommonJS today, while this page is static
+      // GitHub Pages HTML. Keep this helper intentionally small and aligned
+      // with the SDK's public result shape.
+      function precheck(input) {
+        var policy = input.policy || {};
+        var policyApplied = {
+          minReceipts: policy.minReceipts == null ? 0 : policy.minReceipts,
+          excludeRiskFlags: policy.excludeRiskFlags || [],
+          requireCoSignatureRatio: policy.requireCoSignatureRatio == null ? 0 : policy.requireCoSignatureRatio,
+          timeoutMs: policy.timeoutMs == null ? 5000 : policy.timeoutMs,
+          mode: policy.mode || "strict"
+        };
+        if (policyApplied.requireCoSignatureRatio > 0) {
+          return Promise.reject(new Error("requireCoSignatureRatio is not supported by this demo precheck path"));
+        }
+
+        var endpoint = (input.endpoint || DEFAULT_TRUST_API_ENDPOINT).replace(/\/+$/, "");
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () { controller.abort(); }, policyApplied.timeoutMs);
+
+        return fetch(endpoint + "/v1/select", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            task: input.task,
+            candidates: input.candidates,
+            mode: policyApplied.mode
+          }),
+          signal: controller.signal
+        }).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        }).then(function (data) {
+          var rejectedSlugs = {};
+          (data.rejected || []).forEach(function (r) { rejectedSlugs[r.slug] = true; });
+
+          var ranked = (data.candidates || []).map(function (c) {
+            return {
+              candidate: c.slug,
+              score: c.trust == null ? null : c.trust,
+              receiptCount: c.receipts || 0,
+              confidence: c.confidence == null ? null : c.confidence,
+              riskFlags: c.riskFlags || [],
+              verdict: c.verdict || "unscored",
+              eligible: computeEligibility(c, policyApplied, rejectedSlugs)
+            };
+          });
+
+          ranked.sort(function (a, b) {
+            if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+            var sa = a.score == null ? -Infinity : a.score;
+            var sb = b.score == null ? -Infinity : b.score;
+            if (sb !== sa) return sb - sa;
+            return b.receiptCount - a.receiptCount;
+          });
+
+          var firstEligible = ranked.find(function (c) { return c.eligible; });
+          var selected = firstEligible ? firstEligible.candidate : null;
+          var result = {
+            selected: selected,
+            ranked: ranked,
+            unscored: ranked.filter(function (c) { return c.verdict === "unscored"; }).map(function (c) { return c.candidate; }),
+            reason: selected ? REASON_SELECTED : REASON_NO_ELIGIBLE,
+            policyApplied: policyApplied,
+            source: data.candidates && data.candidates[0] ? data.candidates[0].source : "xaip-aggregator (source-unknown)",
+            timestamp: data.timestamp || new Date().toISOString()
+          };
+          if (input.includeDecision === true) result.decision = deriveDecision(ranked);
+          return result;
+        }).finally(function () {
+          clearTimeout(timeoutId);
+        });
       }
 
       // Display-layer mapping: API verdict label -> demo badge text.
@@ -410,8 +510,8 @@
           return;
         }
 
-        var receipts = c && c.receipts ? c.receipts : 0;
-        appendText(meta, "trust " + fmtTrust(c && c.trust));
+        var receipts = c && c.receiptCount ? c.receiptCount : 0;
+        appendText(meta, "trust " + fmtTrust(c && c.score));
         appendSeparator(meta);
         appendText(meta, receipts + " signed " + (receipts === 1 ? "receipt" : "receipts"));
         if (c && c.riskFlags && c.riskFlags.length) {
@@ -454,33 +554,31 @@
         var mm = String(when.getUTCMinutes()).padStart(2, "0");
 
         clearChildren(detailEl);
-        appendText(detailEl, "Fetched live from ");
+        appendText(detailEl, "Fetched live through ");
         var code = document.createElement("code");
-        code.textContent = "POST /v1/select";
+        code.textContent = "precheck() -> POST /v1/select";
         detailEl.appendChild(code);
         appendText(detailEl, " at " + hh + ":" + mm + " UTC. Values shift as new signed receipts arrive.");
       }
 
       function fetchLive() {
-        return fetch(API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(BODY)
-        }).then(function (r) {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.json();
+        return precheck({
+          task: BODY.task,
+          candidates: BODY.candidates,
+          includeDecision: true,
+          policy: { timeoutMs: 5000, mode: "strict" }
         });
       }
 
       // Kick off live fetch.
       fetchLive().then(function (data) {
-        if (!data || !Array.isArray(data.candidates)) {
+        if (!data || !Array.isArray(data.ranked)) {
           setStatusError("malformed response");
           return;
         }
 
         var bySlug = {};
-        data.candidates.forEach(function (c) { bySlug[c.slug] = c; });
+        data.ranked.forEach(function (c) { bySlug[c.candidate] = c; });
         BODY.candidates.forEach(function (slug) {
           renderCandidate(slug, bySlug[slug] || { verdict: "unscored", riskFlags: ["insufficient_data"] });
         });
@@ -490,12 +588,12 @@
           // Build our own reason text from API data instead of using data.reason verbatim,
           // so phrasing stays aligned with the "available execution evidence" framing.
           var winner = bySlug[data.selected];
-          if (winner && winner.trust !== null && winner.trust !== undefined) {
-            var winnerReceipts = winner.receipts || 0;
+          if (winner && winner.score !== null && winner.score !== undefined) {
+            var winnerReceipts = winner.receiptCount || 0;
             var noun = (winnerReceipts === 1) ? "receipt" : "receipts";
             selectedReason.textContent =
               "Selected using available execution evidence: trust " +
-              fmtTrust(winner.trust) + ", " + winnerReceipts + " signed " + noun + ".";
+              fmtTrust(winner.score) + ", " + winnerReceipts + " signed " + noun + ".";
           } else if (data.reason) {
             selectedReason.textContent = data.reason;
           }
