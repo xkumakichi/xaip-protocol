@@ -4,10 +4,9 @@
 >
 > **⚠️ Do NOT use XAIP trust scores for high-stakes decisions (payments, security, production routing).**
 
-Chain-agnostic trust protocol for AI agents.
+Chain-agnostic execution evidence tools for AI agents.
 
-When agents delegate tasks to other agents, they need to know: **"Can I trust you?"**
-XAIP answers that question — without requiring any specific blockchain, platform, or vendor.
+When agents delegate tasks to tools, skills, services, or other agents, they need available execution evidence before they act. XAIP exposes signed receipt data and SDK helpers for inspecting that evidence without requiring any specific blockchain, platform, or vendor.
 
 ## Install
 
@@ -16,6 +15,34 @@ npm install xaip-sdk
 ```
 
 ## Quick Start
+
+### Check evidence before delegation
+
+`precheck()` is a thin SDK wrapper over `POST /v1/select`. It returns available execution evidence for tool, skill, or agent candidates before your code decides what to delegate.
+
+```typescript
+import { precheck } from "xaip-sdk";
+
+const result = await precheck({
+  task: "Fetch React documentation",
+  candidates: ["context7", "memory", "unknown-server"],
+  policy: {
+    minReceipts: 10,
+    excludeRiskFlags: ["high_error_rate"],
+    timeoutMs: 5000,
+    mode: "strict",
+  },
+  includeDecision: true,
+});
+
+console.log(result.selected); // e.g. "memory" or null
+console.log(result.decision); // "allow", "warn", or "unknown"
+console.table(result.ranked);
+```
+
+`precheck()` is not a sandbox, not an approval engine, and not a payment rail. It does not make tools safe or guarantee trust. Use the result as input to your own policy, UI, or routing logic.
+
+### Add receipt emission to an MCP server
 
 ```typescript
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -39,7 +66,7 @@ Every tool execution is now:
 - **Queryable** by other agents via `xaip_query`
 - **Co-signed** when a caller provides a SigningDelegate
 
-## Trust Model (v0.3.1)
+## Trust Model
 
 ```
 trust = bayesianScore x callerDiversity x coSignFactor
@@ -140,9 +167,7 @@ await withXAIP(server, {
 | `otel` | Export receipts as OpenTelemetry spans |
 
 ```typescript
-import { veridictPlugin } from "xaip-sdk/plugins/veridict";
-import { xrplPlugin } from "xaip-sdk/plugins/xrpl";
-import { otelPlugin } from "xaip-sdk/otel";
+import { veridictPlugin, xrplPlugin, otelPlugin } from "xaip-sdk";
 
 await withXAIP(server, {
   plugins: [veridictPlugin(), xrplPlugin({ wallet }), otelPlugin()],
@@ -158,11 +183,13 @@ await withXAIP(server, {
 - Sybil resistance depends on caller diversity. Collusion rings (multiple DIDs controlled by one entity) can inflate trust scores, though weighted diversity raises the cost.
 - Aggregator-based federation assumes honest majority among configured aggregator nodes. An attacker controlling >50% of your aggregator list can manipulate query results.
 
-See [XAIP-SPEC.md](./XAIP-SPEC.md) for the full threat model.
+See the repository specification for the full threat model:
+https://github.com/xkumakichi/xaip-protocol/blob/main/XAIP-SPEC.md
 
 ## Specification
 
-Full protocol specification: [XAIP-SPEC.md](./XAIP-SPEC.md)
+Full protocol specification:
+https://github.com/xkumakichi/xaip-protocol/blob/main/XAIP-SPEC.md
 
 ## Links
 

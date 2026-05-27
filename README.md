@@ -144,27 +144,6 @@ npm install xaip-sdk
 ```
 
 ```typescript
-import { XAIPClient } from "xaip-sdk";
-
-const client = new XAIPClient();
-
-// Rank candidates by available execution evidence
-const decision = await client.select({
-  task: "Fetch React documentation",
-  candidates: ["context7", "sequential-thinking", "unknown-server"],
-});
-
-console.log(decision.selected);    // "context7"
-console.log(decision.withoutXAIP); // "Random selection would pick an unscored server 33% of the time..."
-```
-
-### Use precheck() before delegation
-
-`precheck()` is a thin SDK wrapper over `POST /v1/select`. It returns available execution evidence for tool, skill, or agent candidates before your code decides what to delegate.
-
-This documents the repository implementation RC; version bump and npm publish are separate release steps.
-
-```typescript
 import { precheck } from "xaip-sdk";
 
 const result = await precheck({
@@ -173,9 +152,11 @@ const result = await precheck({
   includeDecision: true,
 });
 
-console.log(result.selected);
+console.log(result.selected); // e.g. "memory" or null
 console.log(result.decision); // "allow", "warn", or "unknown"
 ```
+
+`precheck()` is a thin SDK wrapper over `POST /v1/select`. It returns available execution evidence for tool, skill, or agent candidates before your code decides what to delegate.
 
 See the [precheck() API guide](./docs/precheck.md) for boundaries, policy options, result shape, and errors.
 
