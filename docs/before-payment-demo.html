@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Before Payment Evidence Demo — XAIP</title>
+  <meta name="description" content="A seeded XAIP demo showing execution evidence before delegation to fictional paid skills." />
+  <meta property="og:title" content="Before Payment Evidence Demo — XAIP" />
+  <meta property="og:description" content="A seeded XAIP demo showing execution evidence before delegation to fictional paid skills." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #10161d;
+      --panel-2: #161d26;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --border-strong: #30363d;
+      --accent: #58a6ff;
+      --eligible: #3fb950;
+      --warn: #d29922;
+      --low: #f85149;
+      --unscored: #6e7681;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 1120px; margin: 0 auto; padding: 48px 20px 80px; }
+    header { margin-bottom: 28px; }
+    h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h2 { font-size: 16px; margin: 0 0 12px; color: var(--fg); }
+    p { color: var(--fg); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono { font-family: var(--mono); font-size: 13px; }
+    .super {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 8px;
+      font-family: var(--mono);
+    }
+    .tagline { color: var(--muted); font-size: 15px; margin: 0; max-width: 760px; }
+    .disclosure, .boundary {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin: 22px 0;
+    }
+    .disclosure p, .boundary p { margin: 0; }
+    .disclosure .muted, .boundary .muted {
+      color: var(--muted);
+      display: block;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 18px 0 22px;
+    }
+    @media (max-width: 860px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      overflow-x: hidden;
+    }
+    .panel.with { border-color: var(--border-strong); }
+    .panel-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-head .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--unscored);
+    }
+    .panel.with .dot {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    .slug { color: var(--fg); font-weight: 600; overflow-wrap: anywhere; }
+    .muted { color: var(--muted); }
+    .num { text-align: right; }
+    .flag {
+      display: inline-block;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .yes { color: var(--eligible); font-weight: 600; }
+    .no { color: var(--muted); font-weight: 600; }
+    .result {
+      border: 1px solid rgba(63,185,80,0.38);
+      background: rgba(63,185,80,0.06);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 22px 0;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .result dl {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 6px 12px;
+      margin: 0;
+    }
+    .result dt { color: var(--muted); }
+    .result dd { margin: 0; color: var(--fg); }
+    pre {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      margin: 8px 0 16px;
+      color: var(--fg);
+    }
+    .links {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="super">XAIP seeded demo</p>
+      <h1>Before Payment Evidence Demo</h1>
+      <p class="tagline">A fictional paid-skill scenario showing how an agent can inspect available execution evidence before delegation and before any payment step.</p>
+    </header>
+
+    <section class="disclosure" aria-label="Disclosure">
+      <p><strong>Seeded snapshot. Not live aggregator data.</strong></p>
+      <span class="muted">All candidates, listings, prices, and receipt data on this page are fictional fixtures for a static demo.</span>
+    </section>
+
+    <div class="split">
+      <section class="panel" aria-label="Listing metadata only">
+        <p class="panel-head"><span class="dot"></span>Listing metadata only</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Skill slug</th>
+              <th>Listing rating</th>
+              <th>Price/call</th>
+              <th>One-line description</th>
+            </tr>
+          </thead>
+          <tbody id="listingRows"></tbody>
+        </table>
+      </section>
+
+      <section class="panel with" aria-label="With execution evidence">
+        <p class="panel-head"><span class="dot"></span>With execution evidence</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Skill slug</th>
+              <th class="num">Receipts</th>
+              <th class="num">Success rate</th>
+              <th>Risk flags</th>
+              <th>Eligible</th>
+            </tr>
+          </thead>
+          <tbody id="evidenceRows"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <section class="result" aria-label="Precheck result">
+      <dl>
+        <dt>selected</dt>
+        <dd id="selected">skill:translator-alpha</dd>
+        <dt>reason</dt>
+        <dd id="reason">Selected using available execution evidence.</dd>
+        <dt>decision</dt>
+        <dd id="decision">allow</dd>
+      </dl>
+    </section>
+
+    <h2>Illustrative SDK call</h2>
+    <pre><code>import { precheck } from "xaip-sdk";
+
+const result = await precheck({
+  task: "Translate a document into Japanese",
+  candidates: ["skill:translator-alpha", "skill:translator-beta", "skill:translator-gamma"],
+  policy: { minReceipts: 10, excludeRiskFlags: ["repeated_timeout"] },
+  includeDecision: true,
+});</code></pre>
+
+    <footer class="boundary" aria-label="Boundary">
+      <p>XAIP does not make tools safe.</p>
+      <span class="muted">It is not a sandbox, not an approval engine, and not a payment rail. It does not guarantee trust. It makes execution evidence visible before delegation.</span>
+      <span class="muted">Receipts are primary artifacts. Scores and eligibility are derived views.</span>
+    </footer>
+
+    <div class="links">
+      <a href="./precheck.md">precheck() API guide</a>
+      <span class="muted"> · </span>
+      <a href="./evidence-before-delegation.html">Trust Evidence Before Delegation</a>
+    </div>
+  </main>
+
+  <script>
+// Browser-local equivalent of xaip-sdk@0.5.0 precheck().
+    (function () {
+      var REASON_SELECTED = "Selected using available execution evidence.";
+      var REASON_NO_ELIGIBLE = "No eligible candidates based on available execution evidence.";
+      var FIXTURE = [
+        {
+          candidate: "skill:translator-alpha",
+          listing: "AI-powered Japanese translation. Premium quality.",
+          rating: "5.0",
+          price: "0.15 USD/call",
+          receipts: 412,
+          success: 0.94,
+          riskFlags: [],
+          eligible: true
+        },
+        {
+          candidate: "skill:translator-beta",
+          listing: "Fast neural Japanese translator.",
+          rating: "5.0",
+          price: "0.08 USD/call",
+          receipts: 87,
+          success: 0.71,
+          riskFlags: ["repeated_timeout"],
+          eligible: false
+        },
+        {
+          candidate: "skill:translator-gamma",
+          listing: "Next-generation Japanese translation engine.",
+          rating: "5.0",
+          price: "0.05 USD/call",
+          receipts: 0,
+          success: null,
+          riskFlags: [],
+          eligible: false
+        }
+      ];
+
+      function text(value) {
+        return String(value == null ? "" : value);
+      }
+
+      function appendText(node, value) {
+        node.appendChild(document.createTextNode(text(value)));
+      }
+
+      function cell(row, value, className) {
+        var td = document.createElement("td");
+        if (className) td.className = className;
+        appendText(td, value);
+        row.appendChild(td);
+        return td;
+      }
+
+      function formatSuccess(value) {
+        return value == null ? "No execution evidence available" : Math.round(value * 100) + "%";
+      }
+
+      function renderFlags(node, flags) {
+        if (!flags || flags.length === 0) {
+          appendText(node, "none");
+          node.className = "muted";
+          return;
+        }
+        flags.forEach(function (flag) {
+          var span = document.createElement("span");
+          span.className = "flag";
+          span.textContent = flag;
+          node.appendChild(span);
+        });
+      }
+
+      function precheck(input) {
+        var policy = input.policy || {};
+        var minReceipts = policy.minReceipts == null ? 0 : policy.minReceipts;
+        var excludeRiskFlags = policy.excludeRiskFlags || [];
+        var ranked = FIXTURE.filter(function (candidate) {
+          return input.candidates.indexOf(candidate.candidate) !== -1;
+        }).map(function (candidate) {
+          var flagExcluded = candidate.riskFlags.some(function (flag) {
+            return excludeRiskFlags.indexOf(flag) !== -1;
+          });
+          var hasEnoughReceipts = candidate.receipts >= minReceipts;
+          var hasEvidence = candidate.receipts > 0;
+          var eligible = hasEvidence && hasEnoughReceipts && !flagExcluded && candidate.eligible;
+          return {
+            candidate: candidate.candidate,
+            score: candidate.success,
+            receiptCount: candidate.receipts,
+            confidence: candidate.receipts === 0 ? null : Math.min(1, candidate.receipts / 100),
+            riskFlags: candidate.riskFlags.slice(),
+            eligible: eligible,
+            listing: candidate.listing,
+            rating: candidate.rating,
+            price: candidate.price
+          };
+        });
+
+        ranked.sort(function (a, b) {
+          if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+          var sa = a.score == null ? -Infinity : a.score;
+          var sb = b.score == null ? -Infinity : b.score;
+          if (sb !== sa) return sb - sa;
+          return b.receiptCount - a.receiptCount;
+        });
+
+        var selected = ranked.find(function (candidate) { return candidate.eligible; });
+        var result = {
+          selected: selected ? selected.candidate : null,
+          ranked: ranked,
+          unscored: ranked.filter(function (candidate) { return candidate.receiptCount === 0; }).map(function (candidate) { return candidate.candidate; }),
+          reason: selected ? REASON_SELECTED : REASON_NO_ELIGIBLE,
+          policyApplied: {
+            minReceipts: minReceipts,
+            excludeRiskFlags: excludeRiskFlags,
+            requireCoSignatureRatio: 0,
+            timeoutMs: 5000,
+            mode: "strict"
+          },
+          source: "seeded-static-fixture",
+          timestamp: "2026-05-27T00:00:00Z"
+        };
+        if (input.includeDecision === true) {
+          result.decision = selected ? "allow" : (result.unscored.length === ranked.length ? "unknown" : "warn");
+        }
+        return result;
+      }
+
+      function renderListingRows(candidates) {
+        var tbody = document.getElementById("listingRows");
+        candidates.forEach(function (candidate) {
+          var row = document.createElement("tr");
+          cell(row, candidate.candidate, "slug");
+          cell(row, candidate.rating, "num");
+          cell(row, candidate.price, "num");
+          cell(row, candidate.listing);
+          tbody.appendChild(row);
+        });
+      }
+
+      function renderEvidenceRows(result) {
+        var tbody = document.getElementById("evidenceRows");
+        result.ranked.forEach(function (candidate) {
+          var row = document.createElement("tr");
+          cell(row, candidate.candidate, "slug");
+          cell(row, candidate.receiptCount, "num");
+          cell(row, formatSuccess(candidate.score), "num");
+          var flags = document.createElement("td");
+          renderFlags(flags, candidate.riskFlags);
+          row.appendChild(flags);
+          cell(row, candidate.eligible ? "yes" : "no", candidate.eligible ? "yes" : "no");
+          tbody.appendChild(row);
+        });
+      }
+
+      var result = precheck({
+        task: "Translate a document into Japanese",
+        candidates: ["skill:translator-alpha", "skill:translator-beta", "skill:translator-gamma"],
+        policy: { minReceipts: 10, excludeRiskFlags: ["repeated_timeout"] },
+        includeDecision: true
+      });
+
+      renderListingRows(FIXTURE);
+      renderEvidenceRows(result);
+      document.getElementById("selected").textContent = result.selected || "none";
+      document.getElementById("reason").textContent = result.reason;
+      document.getElementById("decision").textContent = result.decision || "unknown";
+    })();
+  </script>
+</body>
+</html>

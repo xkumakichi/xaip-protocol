@@ -17,6 +17,7 @@ Receipts are the primary artifact. Trust scores are one derived view over those 
 ### Entry points
 
 - [Trust Evidence Before Delegation](./docs/evidence-before-delegation.html) — one-screen demo, live `POST /v1/select` against three contrasting candidates.
+- [Before Payment Evidence Demo](./docs/before-payment-demo.html) — seeded static demo for fictional paid-skill candidates before delegation.
 - [Browser playground](./docs/playground.html) — read-only demo of trust-aware selection.
 - [60-second overview](./docs/agent-trust-overview.md) — the problem XAIP is trying to address.
 - [Future direction](./docs/future-direction.md) — long-term hypothesis, open questions, and current research asks.

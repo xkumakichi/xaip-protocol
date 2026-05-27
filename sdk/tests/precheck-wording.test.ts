@@ -25,6 +25,10 @@ const GUARDED_FILES = [
     label: "docs/precheck.md",
     path: path.join(__dirname, "..", "..", "docs", "precheck.md"),
   },
+  {
+    label: "docs/before-payment-demo.html",
+    path: path.join(__dirname, "..", "..", "docs", "before-payment-demo.html"),
+  },
 ];
 
 interface ForbiddenEntry {

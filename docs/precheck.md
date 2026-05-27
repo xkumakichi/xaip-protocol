@@ -191,3 +191,5 @@ npx tsx scripts/precheck-demo.ts
 ```
 
 The demo calls the live Trust API and prints scored, mixed, all-unscored, and policy-filtered scenarios.
+
+See also: [Before Payment Evidence Demo](./before-payment-demo.html), a seeded static demo using fictional paid-skill candidates.
