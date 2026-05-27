@@ -49,6 +49,7 @@
       font-family: var(--mono);
     }
     .tagline { color: var(--muted); font-size: 15px; margin: 0; max-width: 760px; }
+    .setup { color: var(--fg); font-size: 15px; margin: 0 0 16px; max-width: 760px; }
     .disclosure, .boundary {
       background: var(--panel);
       border: 1px solid var(--border);
@@ -63,6 +64,7 @@
       margin-top: 6px;
       font-size: 14px;
     }
+    .disclosure.compact .muted { margin-top: 0; }
     .split {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -178,13 +180,14 @@
     <header>
       <p class="super">XAIP seeded demo</p>
       <h1>Before Payment Evidence Demo</h1>
-      <p class="tagline">A fictional paid-skill scenario showing how an agent can inspect available execution evidence before delegation and before any payment step.</p>
+      <p class="tagline">Before an agent pays for a closed-source skill, it should see more than a listing.<br>XAIP makes available execution evidence visible before delegation.</p>
     </header>
 
-    <section class="disclosure" aria-label="Disclosure">
-      <p><strong>Seeded snapshot. Not live aggregator data.</strong></p>
-      <span class="muted">All candidates, listings, prices, and receipt data on this page are fictional fixtures for a static demo.</span>
+    <section class="disclosure compact" aria-label="Disclosure">
+      <p class="muted">Seeded snapshot — <a href="#fixtures">see fixtures below</a>.</p>
     </section>
+
+    <p class="setup">An agent is asked to translate a document. Three candidate skills are available on a paid marketplace. Their internals are not inspectable.</p>
 
     <div class="split">
       <section class="panel" aria-label="Listing metadata only">
@@ -228,6 +231,11 @@
         <dt>decision</dt>
         <dd id="decision">allow</dd>
       </dl>
+    </section>
+
+    <section id="fixtures" class="disclosure" aria-label="Fixture disclosure">
+      <p><strong>Seeded snapshot. Not live aggregator data.</strong></p>
+      <span class="muted">All candidates, listings, prices, and receipt data on this page are fictional fixtures for a static demo.</span>
     </section>
 
     <h2>Illustrative SDK call</h2>
