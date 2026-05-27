@@ -10,6 +10,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "test": "jest",
     "build": "tsc",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"

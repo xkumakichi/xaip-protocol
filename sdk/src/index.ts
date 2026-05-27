@@ -59,3 +59,21 @@ export { veridictPlugin } from "./plugins/veridict";
 export type { VeridictPluginConfig } from "./plugins/veridict";
 export { xrplPlugin, resolveXRPLDID } from "./plugins/xrpl";
 export type { XRPLPluginConfig } from "./plugins/xrpl";
+
+// precheck() — developer entry for evidence-before-delegation
+export {
+  precheck,
+  REASON_SELECTED,
+  REASON_NO_ELIGIBLE,
+  DEFAULT_TRUST_API_ENDPOINT,
+  XaipInputError,
+  XaipNetworkError,
+  XaipServiceError,
+  XaipTimeoutError,
+} from "./precheck";
+export type {
+  PrecheckInput,
+  PrecheckPolicy,
+  PrecheckResult,
+  RankedCandidate,
+} from "./precheck";
