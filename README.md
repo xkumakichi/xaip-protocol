@@ -24,6 +24,7 @@ Receipts are the primary artifact. Trust scores are one derived view over those 
 - [Agent Trust Check design](./docs/agent-trust-check-design.md) — planned diagnostic concept.
 - [Class-aware scoring design](./docs/class-aware-scoring-design.md) — future design note; not live scoring behavior.
 - [Emit receipts from anything](./docs/emit-from-anything.md) — how to produce XAIP receipts from any tool system.
+- [precheck() API guide](./docs/precheck.md) — SDK helper for execution evidence before delegation.
 - [Run xaip-caller](./docs/run-xaip-caller.md) — contribute signed receipts without running MCP.
 
 ## Try It Now
@@ -156,6 +157,27 @@ const decision = await client.select({
 console.log(decision.selected);    // "context7"
 console.log(decision.withoutXAIP); // "Random selection would pick an unscored server 33% of the time..."
 ```
+
+### Use precheck() before delegation
+
+`precheck()` is a thin SDK wrapper over `POST /v1/select`. It returns available execution evidence for tool, skill, or agent candidates before your code decides what to delegate.
+
+This documents the repository implementation RC; version bump and npm publish are separate release steps.
+
+```typescript
+import { precheck } from "xaip-sdk";
+
+const result = await precheck({
+  task: "Fetch React documentation",
+  candidates: ["context7", "memory", "unknown-server"],
+  includeDecision: true,
+});
+
+console.log(result.selected);
+console.log(result.decision); // "allow", "warn", or "unknown"
+```
+
+See the [precheck() API guide](./docs/precheck.md) for boundaries, policy options, result shape, and errors.
 
 ## MCP Server
 
