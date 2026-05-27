@@ -1,5 +1,5 @@
 /**
- * Static guardrail: precheck.ts and the wording it ships must never contain
+ * Static guardrail: precheck implementation/docs wording must never contain
  * promotional or trust-asserting language that would conflict with XAIP's
  * "evidence layer, not approval engine" stance.
  *
@@ -16,7 +16,16 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const SOURCE_PATH = path.join(__dirname, "..", "src", "precheck.ts");
+const GUARDED_FILES = [
+  {
+    label: "sdk/src/precheck.ts",
+    path: path.join(__dirname, "..", "src", "precheck.ts"),
+  },
+  {
+    label: "docs/precheck.md",
+    path: path.join(__dirname, "..", "..", "docs", "precheck.md"),
+  },
+];
 
 interface ForbiddenEntry {
   label: string;
@@ -33,25 +42,31 @@ const FORBIDDEN: ForbiddenEntry[] = [
   { label: "recommended", pattern: /\brecommended\b/i },
 ];
 
-describe("precheck source — forbidden wording static guard", () => {
-  let source: string;
+describe("precheck wording — forbidden wording static guard", () => {
+  const sources = GUARDED_FILES.map((file) => ({
+    label: file.label,
+    text: fs.readFileSync(file.path, "utf-8"),
+  }));
 
-  beforeAll(() => {
-    source = fs.readFileSync(SOURCE_PATH, "utf-8");
-  });
-
-  it.each(FORBIDDEN)(
-    "must not contain forbidden phrase: $label",
-    ({ pattern }) => {
-      const match = source.match(pattern);
+  it.each(
+    sources.flatMap((source) =>
+      FORBIDDEN.map((entry) => ({ source, entry }))
+    )
+  )(
+    "$source.label must not contain forbidden phrase: $entry.label",
+    ({ source, entry }) => {
+      const match = source.text.match(entry.pattern);
       if (match) {
-        const before = source.slice(Math.max(0, match.index! - 40), match.index!);
-        const after = source.slice(
+        const before = source.text.slice(
+          Math.max(0, match.index! - 40),
+          match.index!
+        );
+        const after = source.text.slice(
           match.index! + match[0].length,
           match.index! + match[0].length + 40
         );
         throw new Error(
-          `Forbidden phrase found near: "...${before}[${match[0]}]${after}..."`
+          `Forbidden phrase found in ${source.label} near: "...${before}[${match[0]}]${after}..."`
         );
       }
       expect(match).toBeNull();
@@ -64,10 +79,12 @@ describe("precheck source — forbidden wording static guard", () => {
     // A JSDoc-style mention of `"block"` in a comment is allowed because the
     // intent there is to document the exclusion, not introduce the value.
     const unionBlock = /(\|\s*"block"|"block"\s*\|)/;
+    const source = sources.find((s) => s.label === "sdk/src/precheck.ts")!.text;
     expect(source).not.toMatch(unionBlock);
   });
 
   it("REASON constants must be exact strings (no drift)", () => {
+    const source = sources.find((s) => s.label === "sdk/src/precheck.ts")!.text;
     expect(source).toContain(
       'REASON_SELECTED =\n  "Selected using available execution evidence."'
     );
