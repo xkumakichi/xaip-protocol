@@ -35,4 +35,8 @@ docs/outreach/
 
 # npm pack tarballs (publish-only artifact)
 *.tgz
-.claude/settings.local.json
+
+# Local agent config — not for public tree
+CLAUDE.md
+CLAUDE.local.md
+.claude/
