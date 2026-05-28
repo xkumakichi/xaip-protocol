@@ -117,7 +117,7 @@ This isn't a mock API. Trust scores are computed from 1,127 actual MCP tool-call
 | sequential-thinking | 1.000 | 285 | trusted |
 | filesystem | 0.909 | 594 | caution |
 
-Monitored via [Veridict](https://github.com/xkumakichi/veridict), a runtime execution monitor that tracks success rates, latency, and failure types.
+Monitored via **Veridict**, an earlier runtime execution monitor that informed XAIP's receipt-first design.
 
 `filesystem` scores lower because it has real failures in its history — that's the system working correctly. A trust score should reflect reality, not optimism.
 
@@ -159,7 +159,7 @@ XAIP is designed for that future. But it already solves a real problem today.
 - **API**: `https://xaip-trust-api.kuma-github.workers.dev`
 - **GitHub**: [xkumakichi/xaip-protocol](https://github.com/xkumakichi/xaip-protocol)
 - **npm**: [xaip-sdk](https://www.npmjs.com/package/xaip-sdk)
-- **Runtime monitor**: [xkumakichi/veridict](https://github.com/xkumakichi/veridict)
+- **Runtime monitor**: Veridict (earlier experiment, folded into XAIP).
 
 ---
 

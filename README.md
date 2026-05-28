@@ -341,7 +341,7 @@ This is an individual Internet-Draft. It is not an IETF standard, not IETF-appro
 - [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust) — MCP server for AI agents to check trust scores
 - [xaip-langchain](https://www.npmjs.com/package/xaip-langchain) — LangChain.js callback handler that emits XAIP receipts
 - [xaip-openai](https://www.npmjs.com/package/xaip-openai) — OpenAI tool-calling wrapper with signed receipts
-- [Veridict](https://github.com/xkumakichi/veridict) — MCP runtime monitor that emits XAIP-compatible receipts (folded into XAIP as a runtime data source; not maintained as an independent product)
+- **Veridict** — earlier runtime execution logging experiment that informed XAIP's receipt-first design. Previously published as an npm package; not maintained as an independent product.
 - [XAIP Specification v0.4](./XAIP-SPEC.md) — Current protocol specification
 - [XAIP Specification v0.5 RC](./XAIP-SPEC-v0.5-DRAFT.md) — Release candidate (tool class taxonomy)
 
