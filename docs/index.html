@@ -231,20 +231,35 @@
       lastUpdate = new Date(timestamp);
       ts.textContent = formatAgo(lastUpdate);
     }
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+    function display(value) {
+      if (value === undefined || value === null || value === "") return "—";
+      return escapeHtml(value);
+    }
+    function formatTrust(value) {
+      return typeof value === "number" ? value.toFixed(3) : "—";
+    }
     function render(servers) {
-      const sorted = servers.slice().sort((a, b) => b.trust - a.trust);
+      const sorted = servers.slice().sort((a, b) => (b.trust || 0) - (a.trust || 0));
       rows.innerHTML = sorted.map(s => {
-        const flags = (s.riskFlags || []).map(f => `<span class="flag">${f}</span>`).join(" ") || "—";
+        const flags = (s.riskFlags || []).map(f => `<span class="flag">${escapeHtml(f)}</span>`).join(" ") || "—";
         const observed = s.observedToolMetadata || {};
         return `<tr>
-          <td>${s.slug}</td>
-          <td class="num">${s.trust.toFixed(3)}</td>
-          <td class="verdict ${s.verdict}">${s.verdict}</td>
-          <td class="num">${s.receipts}</td>
+          <td>${display(s.slug)}</td>
+          <td class="num">${formatTrust(s.trust)}</td>
+          <td class="verdict ${escapeHtml(s.verdict || "")}">${display(s.verdict)}</td>
+          <td class="num">${display(s.receipts)}</td>
           <td>${flags}</td>
-          <td>${observed.toolClass || "—"}</td>
-          <td>${observed.verifiabilityHint || "—"}</td>
-          <td>${observed.settlementLayer || "—"}</td>
+          <td>${display(observed.toolClass)}</td>
+          <td>${display(observed.verifiabilityHint)}</td>
+          <td>${display(observed.settlementLayer)}</td>
         </tr>`;
       }).join("");
     }
