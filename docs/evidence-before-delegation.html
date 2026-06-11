@@ -9,46 +9,67 @@
   <meta property="og:description" content="Before an agent delegates work to a tool, it should be able to inspect historical execution evidence. A demo of the XAIP trust evidence layer." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
+  <meta name="theme-color" content="#080b10" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e141c'/%3E%3Cpath d='M11 7h10a1 1 0 0 1 1 1v17l-3-2-3 2-3-2-3 2V8a1 1 0 0 1 1-1z' fill='none' stroke='%2358a6ff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M13 12h6M13 16h6' stroke='%2358a6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
   <style>
     :root {
-      --bg: #0b0f14;
-      --panel: #10161d;
-      --panel-2: #161d26;
-      --fg: #e6edf3;
-      --muted: #8b949e;
-      --border: #21262d;
-      --border-strong: #30363d;
+      --bg: #080b10;
+      --panel: #0e141c;
+      --panel-2: #131a24;
+      --panel-deep: #0a0f15;
+      --fg: #e8eef5;
+      --muted: #8fa0b1;
+      --border: #1d2735;
+      --border-strong: #2d3a4a;
       --accent: #58a6ff;
       --trusted: #3fb950;
       --caution: #d29922;
       --low: #f85149;
       --unscored: #6e7681;
+      --radius: 12px;
+      --radius-sm: 8px;
       --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
-      background: var(--bg);
+      background:
+        radial-gradient(1000px 480px at 78% -12%, rgba(88, 166, 255, 0.09), transparent 62%),
+        radial-gradient(820px 420px at 6% -8%, rgba(63, 185, 80, 0.05), transparent 58%),
+        var(--bg);
+      background-attachment: fixed;
       color: var(--fg);
-      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
-    main { max-width: 1040px; margin: 0 auto; padding: 48px 20px 80px; }
+    ::selection { background: rgba(88, 166, 255, 0.3); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    main { max-width: 1040px; margin: 0 auto; padding: 56px 20px 80px; }
 
     header { margin-bottom: 32px; }
-    h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: -0.02em; font-weight: 700; }
+    @supports (-webkit-background-clip: text) or (background-clip: text) {
+      h1 {
+        background: linear-gradient(120deg, #f2f7fd 30%, #8ec1ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+      }
+    }
     .tagline { color: var(--muted); font-size: 15px; margin: 0; }
-    .super { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; font-family: var(--mono); }
+    .super { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 10px; font-family: var(--mono); }
 
-    h2 { font-size: 16px; margin: 32px 0 12px; color: var(--fg); }
+    h2 { font-size: 16px; margin: 36px 0 12px; color: var(--fg); letter-spacing: -0.01em; }
     p { color: var(--fg); }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
     code, .mono { font-family: var(--mono); font-size: 13px; }
 
     .problem {
-      background: var(--panel);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0) 45%), var(--panel);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius);
       padding: 18px 20px;
       margin: 24px 0 28px;
     }
@@ -63,12 +84,14 @@
     }
     @media (max-width: 760px) {
       .split { grid-template-columns: 1fr; }
+      main { padding-top: 36px; }
+      h1 { font-size: 26px; }
     }
 
     .panel {
-      background: var(--panel);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 45%), var(--panel);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius);
       padding: 18px 18px 16px;
     }
     .panel-head {
@@ -87,18 +110,27 @@
     }
     .panel.without { border-color: var(--border); }
     .panel.without .dot { background: var(--unscored); }
-    .panel.with { border-color: var(--border-strong); }
-    .panel.with .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .panel.with { border-color: var(--border-strong); box-shadow: 0 0 32px rgba(88, 166, 255, 0.05); }
+    .panel.with .dot {
+      background: var(--accent); box-shadow: 0 0 6px var(--accent);
+      animation: breathe 2.6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.8; }
+    }
 
     .candidate {
       border: 1px solid var(--border);
-      background: var(--panel-2);
-      border-radius: 6px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0) 55%), var(--panel-2);
+      border-radius: 10px;
       padding: 12px 14px;
       margin-bottom: 10px;
       font-family: var(--mono);
       font-size: 13px;
+      transition: border-color 0.15s ease;
     }
+    .candidate:hover { border-color: var(--border-strong); }
     .candidate:last-child { margin-bottom: 0; }
     .candidate .slug {
       font-weight: 600;
@@ -115,8 +147,8 @@
     }
     .candidate .badge {
       display: inline-block;
-      padding: 1px 7px;
-      border-radius: 10px;
+      padding: 2px 9px;
+      border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.02em;
@@ -131,8 +163,8 @@
       display: inline-block;
       background: var(--panel);
       border: 1px solid var(--border);
-      padding: 1px 6px;
-      border-radius: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
       font-size: 11px;
       color: var(--muted);
       margin-right: 4px;
@@ -146,13 +178,14 @@
 
     .selected-banner {
       margin-top: 14px;
-      padding: 10px 12px;
+      padding: 11px 13px;
       border: 1px solid rgba(63,185,80,0.4);
       background: rgba(63,185,80,0.06);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-family: var(--mono);
       font-size: 12.5px;
       color: var(--fg);
+      box-shadow: 0 0 24px rgba(63, 185, 80, 0.06);
     }
     .selected-banner strong { color: var(--trusted); }
 
@@ -171,17 +204,21 @@
     }
     .cta a {
       display: inline-block;
-      padding: 8px 14px;
+      padding: 9px 16px;
       border: 1px solid var(--border-strong);
-      border-radius: 6px;
+      border-radius: 10px;
       font-size: 13.5px;
       font-family: var(--mono);
       color: var(--fg);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 60%), var(--panel);
+      transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
     .cta a:hover {
       border-color: var(--accent);
       color: var(--accent);
       text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(88, 166, 255, 0.12);
     }
 
     .api-note {
@@ -201,6 +238,7 @@
     .api-note.is-live .live-dot {
       background: var(--trusted);
       box-shadow: 0 0 6px var(--trusted);
+      animation: breathe 2.6s ease-in-out infinite;
     }
     .api-note.is-error .live-dot {
       background: var(--low);
@@ -215,8 +253,9 @@
     .api-note.is-error .label { color: var(--low); }
 
     pre {
-      background: var(--panel); border: 1px solid var(--border);
-      padding: 12px 14px; border-radius: 6px; overflow-x: auto;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0) 50%), var(--panel-deep);
+      border: 1px solid var(--border);
+      padding: 13px 15px; border-radius: var(--radius-sm); overflow-x: auto;
       font-size: 12.5px; margin: 8px 0 16px;
       color: var(--fg);
     }
@@ -224,6 +263,9 @@
     footer {
       margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
       color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 16px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
