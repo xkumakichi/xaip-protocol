@@ -19,6 +19,7 @@
  */
 
 import * as http from "http";
+import * as os from "os";
 import {
   ExecutionReceipt,
   AggregatorPushPayload,
@@ -329,8 +330,7 @@ export function createAggregatorServer(
   const port = opts.port ?? 4000;
   const host = opts.host ?? "0.0.0.0";
   const store = opts.store ?? new ReceiptStore();
-  const nodeId =
-    opts.nodeId ?? `xaip-aggregator@${require("os").hostname()}`;
+  const nodeId = opts.nodeId ?? `xaip-aggregator@${os.hostname()}`;
 
   const server = http.createServer(
     async (req: http.IncomingMessage, res: http.ServerResponse) => {

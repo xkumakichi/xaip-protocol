@@ -1,5 +1,5 @@
 /**
- * XAIP SDK v0.3.1 — Chain-agnostic trust protocol for AI agents.
+ * XAIP SDK — Chain-agnostic trust protocol for AI agents.
  *
  * Usage:
  *   import { withXAIP } from "xaip-sdk";
@@ -34,6 +34,10 @@ export type {
   SigningDelegate,
   FailureType,
   ExecutionReceipt,
+  ToolMetadata,
+  XAIPToolMetadata,
+  XAIPToolClass,
+  XAIPVerifiabilityHint,
   CapabilityScore,
   TrustScore,
   QueryResult,

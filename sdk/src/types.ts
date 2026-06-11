@@ -1,7 +1,7 @@
 /**
- * XAIP Protocol — Type Definitions (v0.3.1)
+ * XAIP Protocol — Type Definitions
  *
- * Root redesign: Bayesian trust model, SigningDelegate, caller diversity.
+ * Bayesian trust model, SigningDelegate, caller diversity.
  * No magic constants. Mathematically grounded.
  */
 
@@ -182,5 +182,11 @@ export const DEFAULT_RATE_LIMITS: RateLimitConfig = {
 
 // ─── Constants ───────────────────────────────────────
 
+/**
+ * Protocol wire version. Deliberately independent of the npm package
+ * version: it identifies the receipt/protocol format (embedded in
+ * XAIP_PROTOCOL_ID and externally visible artifacts), so it only moves
+ * when the wire format itself changes.
+ */
 export const XAIP_VERSION = "0.4.0";
 export const XAIP_PROTOCOL_ID = `XAIP/${XAIP_VERSION}`;
