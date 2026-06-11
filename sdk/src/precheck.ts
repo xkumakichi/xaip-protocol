@@ -232,11 +232,7 @@ export async function precheck(input: PrecheckInput): Promise<PrecheckResult> {
     })) as unknown as typeof response;
   } catch (err: unknown) {
     // Distinguish timeout vs network failure.
-    if (
-      err instanceof Error &&
-      (err.name === "AbortError" ||
-        (err as { name?: string }).name === "AbortError")
-    ) {
+    if (err instanceof Error && err.name === "AbortError") {
       throw new XaipTimeoutError(
         `precheck timed out after ${policyApplied.timeoutMs}ms`
       );
@@ -261,7 +257,7 @@ export async function precheck(input: PrecheckInput): Promise<PrecheckResult> {
       try {
         parsedBody = await response.text();
       } catch {
-        parsedBody = undefined;
+        // Body unreadable — parsedBody stays undefined.
       }
     }
     throw new XaipServiceError(
