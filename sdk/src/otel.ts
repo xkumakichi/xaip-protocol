@@ -144,15 +144,12 @@ export class XAIPOtelExporter {
     span.setAttribute("xaip.result.hash", receipt.resultHash);
     span.setAttribute("xaip.success", receipt.success);
     span.setAttribute("xaip.latency_ms", receipt.latencyMs);
-    span.setAttribute(
-      "xaip.cosigned",
-      receipt.callerSignature !== undefined && receipt.callerSignature !== null
-    );
+    span.setAttribute("xaip.cosigned", receipt.callerSignature != null);
 
-    if (receipt.callerDid !== undefined && receipt.callerDid !== null) {
+    if (receipt.callerDid != null) {
       span.setAttribute("xaip.caller.did", receipt.callerDid);
     }
-    if (receipt.failureType !== undefined && receipt.failureType !== null) {
+    if (receipt.failureType != null) {
       span.setAttribute("xaip.failure_type", receipt.failureType);
     }
 

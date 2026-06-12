@@ -1,5 +1,5 @@
 /**
- * XAIP Middleware — MCP server integration (v0.3.1)
+ * XAIP Middleware — MCP server integration
  *
  * v0.3.1 changes:
  *   - SigningDelegate replaces callerPrivateKey (key never leaves caller)

@@ -37,19 +37,21 @@ function hexToString(hex: string): string {
   return Buffer.from(hex, "hex").toString("utf-8");
 }
 
+/** Load the optional xrpl package, with a consistent install hint. */
+function loadXrpl(): any {
+  try {
+    return require("xrpl");
+  } catch {
+    throw new Error("xrpl package not installed. Run: npm install xrpl");
+  }
+}
+
 export function xrplPlugin(config: XRPLPluginConfig): XAIPPlugin {
   return {
     name: "xrpl",
     async init(ctx) {
       // Dynamic import — xrpl is optional
-      let xrpl: any;
-      try {
-        xrpl = require("xrpl");
-      } catch {
-        throw new Error(
-          "xrpl package not installed. Run: npm install xrpl"
-        );
-      }
+      const xrpl = loadXrpl();
 
       const networkUrl =
         NETWORKS[config.network ?? "testnet"];
@@ -165,12 +167,7 @@ export async function resolveXRPLDID(
   address: string,
   network: string = "testnet"
 ): Promise<{ did: string; uri: string; data: string } | null> {
-  let xrpl: any;
-  try {
-    xrpl = require("xrpl");
-  } catch {
-    throw new Error("xrpl package not installed. Run: npm install xrpl");
-  }
+  const xrpl = loadXrpl();
 
   const client = new xrpl.Client(NETWORKS[network]);
   await client.connect();
