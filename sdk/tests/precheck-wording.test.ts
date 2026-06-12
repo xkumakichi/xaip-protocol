@@ -29,6 +29,24 @@ const GUARDED_FILES = [
     label: "docs/before-payment-demo.html",
     path: path.join(__dirname, "..", "..", "docs", "before-payment-demo.html"),
   },
+  {
+    label: "docs/index.html",
+    path: path.join(__dirname, "..", "..", "docs", "index.html"),
+  },
+  {
+    label: "docs/playground.html",
+    path: path.join(__dirname, "..", "..", "docs", "playground.html"),
+  },
+  {
+    label: "docs/evidence-before-delegation.html",
+    path: path.join(
+      __dirname,
+      "..",
+      "..",
+      "docs",
+      "evidence-before-delegation.html"
+    ),
+  },
 ];
 
 interface ForbiddenEntry {
@@ -42,7 +60,7 @@ const FORBIDDEN: ForbiddenEntry[] = [
   { label: "trusted tool", pattern: /\btrusted\s+tool\b/i },
   { label: "guaranteed", pattern: /\bguaranteed\b/i },
   { label: "verified by", pattern: /\bverified\s+by\b/i },
-  { label: "approved", pattern: /\bapproved\b/i },
+  { label: "approved", pattern: /(?<!IETF-)\bapproved\b/i },
   { label: "recommended", pattern: /\brecommended\b/i },
 ];
 
