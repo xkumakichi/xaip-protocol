@@ -1,6 +1,6 @@
 # precheck() API Guide
 
-> Docs RC: this guide describes the repository implementation of `precheck()`. Version bump and npm publish are separate release steps.
+> This guide describes `precheck()` as shipped in `xaip-sdk@0.5.0` on npm.
 
 ## Why This Exists
 

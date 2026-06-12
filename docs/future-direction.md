@@ -25,6 +25,9 @@ XAIP currently has:
 - Preview receipt producers for LangChain.js and OpenAI-compatible tool-call loops.
 - An HTTP caller path via `npx xaip-caller`, which does not require MCP.
 - v0.5 metadata plumbing for tool class hints inside signed receipts.
+- A `precheck()` SDK entry point that returns available execution evidence for a candidate list before delegation.
+- One-screen demos of selection with and without execution evidence, including a seeded before-payment scenario.
+- An individual Internet-Draft describing the signed receipt wire format ([draft-xkumakichi-xaip-receipts](https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/); individual submission, no formal IETF standing).
 
 The current public dataset is still MCP-heavy because MCP was the first integration target. That is a dataset reality, not the intended protocol boundary.
 
@@ -127,4 +130,4 @@ Feedback that argues XAIP is the wrong design is useful. A trust protocol should
 
 ---
 
-*Last reviewed: 2026-04-27. This document is expected to change as the project changes.*
+*Last reviewed: 2026-06-12. This document is expected to change as the project changes.*
