@@ -201,11 +201,17 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
     this.disabled = o.disabled === true || process.env.XAIP_DISABLED === "1";
     this.classifyTool = typeof o.classifyTool === "function" ? o.classifyTool : null;
     this._pending = new Map();
+    this._keys = null;
   }
 
   /** LangChain calls this when cloning the handler for parallel runs. */
   copy() {
     return this;
+  }
+
+  _loadKeys() {
+    if (!this._keys) this._keys = loadKeys();
+    return this._keys;
   }
 
   async handleToolStart(tool, input, runId, parentRunId, tags, metadata, runName) {
@@ -246,7 +252,7 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
 
   async _emit({ toolName, input, output, success, err, start }) {
     try {
-      const keys = loadKeys();
+      const keys = this._loadKeys();
       const caller = ensureCaller(keys);
       const agent = ensureAgent(keys, toolName);
       const latencyMs = Date.now() - start;

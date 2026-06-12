@@ -39,6 +39,17 @@ function verifyEd25519(payload, signatureHex, publicKeyHex) {
   return crypto.verify(null, Buffer.from(payload), key, Buffer.from(signatureHex, "hex"));
 }
 
+function makeKeyPair(did) {
+  const pair = crypto.generateKeyPairSync("ed25519");
+  const pubDer = pair.publicKey.export({ type: "spki", format: "der" });
+  const privDer = pair.privateKey.export({ type: "pkcs8", format: "der" });
+  return {
+    did,
+    publicKey: pubDer.toString("hex"),
+    privateKey: privDer.toString("hex"),
+  };
+}
+
 function recreatePayload(receipt) {
   // Mirror the canonical payload object built in _emit.
   const payloadObject = {
@@ -177,6 +188,37 @@ describe("XAIPCallbackHandler integration", () => {
 
     expect(keysAfter2.caller.did).toBe(keysAfter1.caller.did);
     expect(keysAfter2.agents.t.did).toBe(keysAfter1.agents.t.did);
+  });
+
+  test("loaded keys are cached across emissions on one handler", async () => {
+    const keyFile = process.env.XAIP_LANGCHAIN_KEYS_FILE;
+    const keys = {
+      version: "1.0",
+      caller: makeKeyPair("did:key:test-caller"),
+      agents: {
+        t: makeKeyPair("did:web:lc-t"),
+      },
+    };
+    fs.mkdirSync(path.dirname(keyFile), { recursive: true });
+    fs.writeFileSync(keyFile, JSON.stringify(keys, null, 2));
+
+    const calls = captureFetch();
+    const readSpy = jest.spyOn(fs, "readFileSync");
+    try {
+      const handler = new XAIPCallbackHandler({ aggregatorUrl: "https://example.invalid" });
+      await handler.handleToolStart({ name: "t" }, { a: 1 }, "r1");
+      await handler.handleToolEnd({ b: 2 }, "r1");
+      await handler.handleToolStart({ name: "t" }, { a: 3 }, "r2");
+      await handler.handleToolEnd({ b: 4 }, "r2");
+
+      expect(calls.length).toBe(2);
+      const keyReads = readSpy.mock.calls.filter(
+        ([file]) => path.resolve(String(file)) === path.resolve(keyFile)
+      );
+      expect(keyReads.length).toBe(1);
+    } finally {
+      readSpy.mockRestore();
+    }
   });
 
   test("handleToolEnd without prior handleToolStart is a no-op", async () => {
