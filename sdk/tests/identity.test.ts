@@ -204,6 +204,11 @@ describe("receiptPayload (JCS / RFC 8785)", () => {
 
     expect(parsed.toolMetadata.xaip.class).toBe("settlement");
     expect(parsed.toolMetadata.xaip.verifiabilityHint).toBe("anchored");
+    expect(parsed.toolMetadata.xaip.settlementLayer).toBe("xrpl-testnet");
+    expect(parsed.toolMetadata.xaip.anchorTxHash).toBe(
+      "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
+    );
+    expect(parsed.toolMetadata.xaip.anchorLedgerIndex).toBe(16751127);
   });
 
   it("verifies old and metadata-bearing receipts with their canonical payloads", () => {

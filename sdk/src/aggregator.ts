@@ -99,7 +99,7 @@ export class AggregatorClient {
     if (list.length < 3) {
       console.warn(
         `[AggregatorClient] WARNING: ${list.length} aggregator(s) configured. ` +
-        `Minimum 3 recommended for Byzantine fault tolerance.`
+        `At least 3 are needed for Byzantine fault tolerance.`
       );
     }
     this.urls = list.map((u) => u.replace(/\/$/, ""));
@@ -177,7 +177,11 @@ export class AggregatorClient {
         if (!res.ok) throw new Error(`${baseUrl} responded ${res.status}`);
         const body = (await res.json()) as AggregatorQueryResponse;
 
-        // Verify response signature when present
+        // Verify response signature when present.
+        // The signed payload is plain JSON.stringify(result), NOT JCS: it
+        // relies on JSON.parse/stringify preserving the server's key order
+        // (true for non-integer-like keys). Both sides of this wire live in
+        // this file — keep them symmetric; do not canonicalize one side only.
         if (body.signature && body.publicKey) {
           const payload = JSON.stringify(body.result);
           if (!verify(payload, body.signature, body.publicKey)) {
@@ -440,7 +444,9 @@ export function createAggregatorServer(
             timestamp: new Date().toISOString(),
           };
 
-          // Sign response if signing key is configured
+          // Sign response if signing key is configured.
+          // Plain JSON.stringify, NOT JCS — must stay byte-symmetric with the
+          // client-side verification in AggregatorClient (see comment there).
           if (opts.signingKey) {
             const payload = JSON.stringify(result);
             response.signature = sign(payload, opts.signingKey.privateKey);
