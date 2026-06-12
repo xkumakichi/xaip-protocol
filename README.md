@@ -276,7 +276,7 @@ Ledger-backed identities may be useful when an agent needs an externally anchore
 
 Trust scores are computed from real execution data, not synthetic benchmarks:
 
-- **~4,300** signed receipts across **10** scored MCP servers as of 2026-05-22: context7, sequential-thinking, memory, filesystem, everything, fetch, sqlite, git, puppeteer, playwright
+- **~4,500** signed receipts across **10** scored MCP servers as of 2026-06-12: context7, sequential-thinking, memory, filesystem, everything, fetch, sqlite, git, puppeteer, playwright
 - Automated daily data collection via GitHub Actions
 - Scores update with every new execution receipt; see the live dashboard/API for current values
 
@@ -289,7 +289,7 @@ curl https://xaip-trust-api.kuma-github.workers.dev/v1/servers
 
 | Runtime / integration | Status | How |
 |---|---|---|
-| **MCP** (Model Context Protocol) | Live public dataset (10 servers, ~4,300 signed receipts as of 2026-05-22) | `xaip-claude-hook`, `xaip-sdk`, `xaip-mcp-trust` |
+| **MCP** (Model Context Protocol) | Live public dataset (10 servers, ~4,500 signed receipts as of 2026-06-12) | `xaip-claude-hook`, `xaip-sdk`, `xaip-mcp-trust` |
 | **LangChain.js** | Tested preview + live receipts landed | [`xaip-langchain`](https://www.npmjs.com/package/xaip-langchain) callback handler |
 | **OpenAI-compatible tool-call loops** | Tested preview + live receipts landed | [`xaip-openai`](https://www.npmjs.com/package/xaip-openai) wrapper |
 | **HTTP tools / A2A / proprietary runtimes** | Supported receipt flow | `xaip-sdk` or direct signed receipt emission |
@@ -310,11 +310,11 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 - [x] Aggregator with BFT-capable federation support (public deployment currently single aggregator / `quorum:1`)
 - [x] Ed25519 receipt signing + verification
 - [x] Bayesian trust model with caller diversity
-- [x] ~4,300 signed receipts across 10 scored MCP servers as of 2026-05-22
+- [x] ~4,500 signed receipts across 10 scored MCP servers as of 2026-06-12
 - [x] Automated daily data collection (GitHub Actions)
 - [x] Published preview receipt producers: [xaip-langchain](https://www.npmjs.com/package/xaip-langchain), [xaip-openai](https://www.npmjs.com/package/xaip-openai)
 - [x] MCP Server: [xaip-mcp-trust](https://www.npmjs.com/package/xaip-mcp-trust)
-- [x] npm: [xaip-sdk@0.4.0](https://www.npmjs.com/package/xaip-sdk)
+- [x] npm: [xaip-sdk@0.5.0](https://www.npmjs.com/package/xaip-sdk)
 - [x] v0.5 specification draft (tool class taxonomy; class-aware scoring is a design note only)
 - [x] Multi-caller diversity mechanism verified ([2+ caller identities, metric responds across 8 servers](./docs/contributor/caller-diversity-verification.md))
 - [x] v0.5 class metadata plumbing (observation/display only — does not affect scoring or `/v1/select`)
