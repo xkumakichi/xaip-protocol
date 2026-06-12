@@ -119,7 +119,7 @@ export async function withXAIP(
   if (config?.aggregatorUrls && config.aggregatorUrls.length > 0 && config.aggregatorUrls.length < 3) {
     console.warn(
       `[xaip] WARNING: ${config.aggregatorUrls.length} aggregator(s) configured. ` +
-      `Minimum 3 recommended for Byzantine fault tolerance.`
+      `At least 3 are needed for Byzantine fault tolerance.`
     );
   }
 
@@ -158,11 +158,22 @@ export async function withXAIP(
     | Record<string, any>
     | undefined;
 
-  if (registeredTools) {
+  if (!registeredTools) {
+    console.warn(
+      "[xaip] WARNING: could not access the MCP server's registered tools — " +
+        "no tool calls will be wrapped and no receipts will be emitted. " +
+        "This MCP SDK version may use an internal layout this SDK does not know."
+    );
+  } else {
     for (const [toolName, toolDef] of Object.entries(registeredTools)) {
       if (toolName.startsWith("xaip_")) continue;
       const originalHandler = toolDef.handler ?? toolDef.callback;
-      if (!originalHandler) continue;
+      if (!originalHandler) {
+        console.warn(
+          `[xaip] WARNING: tool "${toolName}" has no handler/callback — not wrapped, no receipts for this tool.`
+        );
+        continue;
+      }
 
       const wrappedHandler = async (...args: any[]) => {
         const startTime = Date.now();
