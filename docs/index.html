@@ -162,6 +162,18 @@
 
     <p class="note"><strong>trust</strong> — observed success probability for this server, based on signed execution receipts. Higher means the server has succeeded more often, across more independent callers, with fewer error patterns.</p>
 
+    <h2>Use it in your own agent</h2>
+    <p>Before your agent delegates, look up what execution evidence exists for the candidates:</p>
+    <pre><code>import { precheck } from "xaip-sdk";
+
+const result = await precheck({
+  task: "Summarize this document",
+  candidates: ["context7", "fetch", "unknown-server"],
+});
+// result.ranked   — execution evidence per candidate
+// result.selected — the eligible candidate, or null</code></pre>
+    <p>Or start emitting receipts from an existing MCP server with one wrapper: <code>withXAIP(server)</code>. Receipts are signed locally — nothing extra is required to read them back. The live scores below are the same evidence, aggregated across independent callers.</p>
+
     <h2>Live trust scores</h2>
     <div class="status-bar">
       <span class="dot" id="dot"></span>
