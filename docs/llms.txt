@@ -1,0 +1,57 @@
+# XAIP — Signed Execution Receipts for AI Agent Tool Calls
+
+> XAIP is a provider-neutral, open protocol for recording signed, hash-only
+> execution receipts of AI agent tool calls. It lets an agent inspect a tool,
+> skill, or agent's prior execution evidence before delegating work or
+> authorizing payment. Receipts are the primary artifact; trust scores are one
+> derived view over them.
+
+## The idea
+
+Evidence before delegation. Most agent tool selection today is blind: the agent
+sees a name and a description, not how the option behaved before. XAIP makes
+behavior-derived execution evidence available before delegation. A single
+operator can use its own receipt history as a local reliability signal today;
+the same signed receipts become portable, independently verifiable evidence the
+moment a second party reads them — so adoption does not depend on a network
+forming first.
+
+## How it works
+
+- Each tool call is recorded as a dual-signed Ed25519 receipt. Only hashes of
+  the task and result are stored — no raw input or output content leaves the
+  machine.
+- The signed payload is canonicalized with JCS (RFC 8785) so two parties who saw
+  the same payload agree on its hash.
+- Receipts are portable across MCP, LangChain.js, OpenAI-compatible tool-call
+  loops, and other runtimes.
+- A public Trust API derives observed success probability and risk flags from
+  the receipt graph, queryable without an account.
+- `precheck()` in the SDK returns the available execution evidence for a set of
+  candidate tools before an agent delegates to any of them.
+
+## Key pages
+
+- Live dashboard: https://xkumakichi.github.io/xaip-protocol/
+- Evidence Before Delegation (one-screen live demo): https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html
+- Before Payment Evidence (seeded demo): https://xkumakichi.github.io/xaip-protocol/before-payment-demo.html
+- Browser playground: https://xkumakichi.github.io/xaip-protocol/playground.html
+
+## Spec and implementation
+
+- IETF Internet-Draft (individual submission, no formal IETF standing): https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/
+- Source code (MIT): https://github.com/xkumakichi/xaip-protocol
+- npm packages: xaip-sdk, xaip-claude-hook, xaip-langchain, xaip-openai
+
+## Relationship to adjacent work
+
+XAIP records per-call execution receipts. This is complementary to session-level
+audit-bundle formats (for example, the work of the W3C AIVS Community Group):
+per-call execution evidence and session-level provenance sit at adjacent layers
+rather than competing.
+
+## What XAIP is not
+
+XAIP is not a sandbox, not an approval engine, and not a payment rail. It does
+not make tools safe and does not guarantee trust. It makes execution evidence
+visible before delegation.

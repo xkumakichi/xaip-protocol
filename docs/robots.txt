@@ -1,0 +1,7 @@
+# XAIP — https://xkumakichi.github.io/xaip-protocol/
+# All crawlers, including AI/LLM crawlers, are welcome.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://xkumakichi.github.io/xaip-protocol/sitemap.xml
