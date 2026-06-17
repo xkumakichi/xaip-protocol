@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>XAIP — Provider-Neutral Signed Execution Evidence for AI Tool Calls</title>
-  <meta name="description" content="Provider-neutral signed execution evidence for AI agent tool calls. Receipts are the primary artifact; trust scores are one derived view. Open protocol, zero-auth API." />
-  <meta property="og:title" content="XAIP — Provider-Neutral Signed Execution Evidence for AI Tool Calls" />
-  <meta property="og:description" content="Provider-neutral signed execution evidence for AI agent tool calls. Receipts are the primary artifact; trust scores are one derived view. Open protocol, zero-auth API." />
+  <title>XAIP — Signed Execution Receipts for AI Agent Tool Calls</title>
+  <meta name="description" content="Wrap an AI agent's tool calls and each becomes a signed execution receipt. Use the receipt history as a local reliability signal today; share the same receipts later as portable, independently verifiable evidence. Provider-neutral open protocol, public API, no account required." />
+  <meta property="og:title" content="XAIP — Signed Execution Receipts for AI Agent Tool Calls" />
+  <meta property="og:description" content="Wrap an AI agent's tool calls into signed execution receipts. A local reliability signal today; portable, independently verifiable evidence when shared later. Provider-neutral, public API, no account required." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <meta name="theme-color" content="#080b10" />
@@ -56,6 +56,7 @@
       }
     }
     .tagline { color: var(--muted); font-size: 14px; margin: 0; }
+    .super { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 8px; font-family: var(--mono); }
     h2 { font-size: 16px; margin: 36px 0 12px; color: var(--fg); letter-spacing: -0.01em; }
     p { color: var(--fg); }
     a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
@@ -124,8 +125,10 @@
 <body>
   <main>
     <header>
-      <h1>XAIP Protocol</h1>
-      <p class="tagline">Provider-neutral signed execution evidence for AI agent tool calls — open protocol, zero-auth API.</p>
+      <p class="super">XAIP Protocol</p>
+      <h1>Evidence Before Delegation</h1>
+      <p class="tagline">Wrap an agent's tool calls once. Use the resulting receipt history as a local reliability signal today; share the same signed receipts later as portable, independently verifiable evidence.</p>
+      <p class="tagline" style="margin-top: 6px;">Provider-neutral open protocol · Public API, no account required</p>
       <p class="tagline" style="margin-top: 8px;"><strong style="color: var(--fg);">Start here →</strong> <a href="./evidence-before-delegation.html">Trust Evidence Before Delegation</a> · one-screen live demo &nbsp;|&nbsp; <a href="./playground.html">Browser playground</a></p>
       <p class="tagline" style="margin-top: 8px;"><strong style="color: var(--fg);">Spec →</strong> Initial Internet-Draft: <a href="https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/">draft-xkumakichi-xaip-receipts</a> (individual, not IETF-approved)</p>
     </header>

@@ -1,6 +1,6 @@
-# XAIP — Trust Infrastructure for AI Agents
+# XAIP — Signed Execution Receipts for AI Agent Tool Calls
 
-> Not another agent framework. A portable signed receipt layer underneath them.
+> Evidence before delegation. Wrap an agent's tool calls once; use the receipt history locally today, and share the same signed receipts later as portable, independently verifiable evidence.
 
 XAIP is a provider-neutral signed execution evidence layer for AI agent tool calls. It records signed receipts across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes, then exposes historical execution evidence that agents, developers, or policy layers can inspect before delegation.
 
