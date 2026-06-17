@@ -43,6 +43,10 @@ forming first.
 - Source code (MIT): https://github.com/xkumakichi/xaip-protocol
 - npm packages: xaip-sdk, xaip-claude-hook, xaip-langchain, xaip-openai
 
+## Writing
+
+- "The agent-payment stack is taking shape. Portable execution evidence is still missing." — defines the pre-delegation execution-evidence design problem: subject of the evidence, unit (per-call vs session), assertion semantics, content vs hash, signing models, independent verification, selective disclosure, and the separation of evidence from decision policy. https://github.com/xkumakichi/xaip-protocol/blob/main/docs/articles/03-evidence-before-payment.md
+
 ## Relationship to adjacent work
 
 XAIP records per-call execution receipts. This is complementary to session-level

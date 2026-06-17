@@ -334,6 +334,7 @@ This is an individual Internet-Draft. It is not an IETF standard, not IETF-appro
 ## Writing
 
 - **Portable Trust** — why trust infrastructure for AI agents must be provider-neutral and behavior-derived ([dev.to](https://dev.to/xkumakichi/portable-trust-o4o) · [Zenn 日本語版](https://zenn.dev/xkumakichi/articles/e93a438265a682))
+- **Evidence Before Payment** — the agent-payment stack describes the transaction at hand; portable evidence of a counterparty's prior execution stays thin. Defines that design problem, independent of any one implementation ([article](./docs/articles/03-evidence-before-payment.md))
 
 ## Related
 
