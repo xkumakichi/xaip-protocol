@@ -20,10 +20,11 @@ forming first.
 
 ## How it works
 
-- Each tool call is recorded as a receipt co-signed by both the executing agent
-  and the caller — dual Ed25519 signatures over the same JCS-canonical payload,
-  so neither party can unilaterally fabricate it. Only hashes of the task and
-  result are stored — no raw input or output content leaves the machine.
+- Each tool call is recorded as a receipt the caller co-signs alongside the
+  executing agent — dual Ed25519 signatures over the same JCS-canonical payload,
+  so neither party can unilaterally fabricate it. Co-signing is recommended, not
+  required: a receipt may also carry the executor signature alone. Only hashes of
+  the task and result are stored — no raw input or output content leaves the machine.
 - The signed payload is canonicalized with JCS (RFC 8785) so two parties who saw
   the same payload agree on its hash.
 - Receipts are portable across MCP, LangChain.js, OpenAI-compatible tool-call

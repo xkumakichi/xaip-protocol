@@ -281,7 +281,7 @@ Other efforts also record evidence about AI agent actions. They differ from this
 
 Session-level integrity bundles record an entire agent session as a single hash-chained, signed archive, answering post-hoc audit questions about a completed workflow. A per-call receipt as defined here and a session-level bundle are composable: a bundle may embed or reference per-call receipts, and a per-call receipt may carry a reference to the session in which it occurred.
 
-Receiver-attested receipts are signed by the called service rather than by the calling agent, which targets the case of an executor that misreports its own actions. That model and the caller co-signature model in this document (Section 4) address different threats: receiver attestation protects against a dishonest executor, while caller co-signature protects against an executor that fabricates favorable history about its own delegations.
+Receiver-attested receipts are signed by the called service rather than by the calling agent: the attestation comes from the counterparty that produced the result, and obtaining it requires that counterparty to participate in signing. The caller co-signature model in this document (the SigningDelegate pattern, Section 4) instead has the delegating party sign the same canonical record as the executing agent, so the record is attested at both ends of the delegation without requiring the called service to participate. The two approaches differ in which party attests and what participation each requires, and a deployment may use either or both.
 
 This document occupies the per-call, caller-co-signed point in that space. It does not subsume the other approaches, and a single deployment may consume more than one format at once.
 
