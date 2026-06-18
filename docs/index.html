@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>XAIP — Signed Execution Receipts for AI Agent Tool Calls</title>
-  <meta name="description" content="Wrap an AI agent's tool calls and each becomes a signed execution receipt. Use the receipt history as a local reliability signal today; share the same receipts later as portable, independently verifiable evidence. Provider-neutral open protocol, public API, no account required." />
+  <meta name="description" content="Wrap an AI agent's tool calls and each becomes a co-signed execution receipt, signed by both the agent and the caller. Use the receipt history as a local reliability signal today; share the same receipts later as portable, independently verifiable evidence. Provider-neutral open protocol, public API, no account required." />
   <meta property="og:title" content="XAIP — Signed Execution Receipts for AI Agent Tool Calls" />
   <meta property="og:description" content="Wrap an AI agent's tool calls into signed execution receipts. A local reliability signal today; portable, independently verifiable evidence when shared later. Provider-neutral, public API, no account required." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
   <link rel="canonical" href="https://xkumakichi.github.io/xaip-protocol/" />
   <meta name="author" content="xkumakichi" />
-  <meta name="keywords" content="AI agent, agent tool calls, tool calling, signed execution receipts, execution evidence, evidence before delegation, tool reliability, MCP, Model Context Protocol, LangChain, agent payments, provider-neutral, Ed25519" />
+  <meta name="keywords" content="AI agent, agent tool calls, tool calling, co-signed execution receipts, dual-signed receipts, signed execution receipts, execution evidence, evidence before delegation, tool reliability, MCP, Model Context Protocol, LangChain, agent payments, provider-neutral, Ed25519" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -21,13 +21,13 @@
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Cross-platform",
     "url": "https://xkumakichi.github.io/xaip-protocol/",
-    "description": "XAIP is a provider-neutral open protocol that records signed, hash-only execution receipts for AI agent tool calls, so an agent can inspect a tool, skill, or agent's prior execution evidence before delegating or paying. Receipts are the primary artifact; trust scores are one derived view, not a claim of absolute safety or correctness.",
+    "description": "XAIP is a provider-neutral open protocol that records co-signed (executor + caller), hash-only execution receipts for AI agent tool calls, so an agent can inspect a tool, skill, or agent's prior execution evidence before delegating or paying. Receipts are the primary artifact; trust scores are one derived view, not a claim of absolute safety or correctness.",
     "author": { "@type": "Person", "name": "xkumakichi", "url": "https://github.com/xkumakichi" },
     "license": "https://opensource.org/licenses/MIT",
     "codeRepository": "https://github.com/xkumakichi/xaip-protocol",
     "isBasedOn": "https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "keywords": "signed execution receipts, evidence before delegation, AI agent tool calls, MCP, provider-neutral"
+    "keywords": "co-signed execution receipts, dual-signed receipts, signed execution receipts, evidence before delegation, AI agent tool calls, MCP, provider-neutral"
   }
   </script>
   <meta name="theme-color" content="#080b10" />
@@ -154,7 +154,7 @@
       <p class="tagline" style="margin-top: 8px;"><strong style="color: var(--fg);">Spec →</strong> Initial Internet-Draft: <a href="https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/">draft-xkumakichi-xaip-receipts</a> (individual, not IETF-approved)</p>
     </header>
 
-    <p>Receipts are the primary artifact: dual-signed Ed25519 records of AI agent tool execution (hashes only — no raw content leaves your machine), portable across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes. Trust scores below are one derived view over those receipts — not a claim of absolute safety or correctness. The current public dataset is MCP-heavy because MCP was the first integration target.</p>
+    <p>Receipts are the primary artifact: Ed25519 records of AI agent tool execution co-signed by both the executing agent and the caller, so neither side can unilaterally fabricate one (hashes only — no raw content leaves your machine), portable across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes. Trust scores below are one derived view over those receipts — not a claim of absolute safety or correctness. The current public dataset is MCP-heavy because MCP was the first integration target.</p>
 
     <p>Every score below is computed from real receipts and is queryable without auth:</p>
 

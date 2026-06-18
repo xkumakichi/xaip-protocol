@@ -2,7 +2,7 @@
 
 > Evidence before delegation. Wrap an agent's tool calls once; use the receipt history locally today, and share the same signed receipts later as portable, independently verifiable evidence.
 
-XAIP is a provider-neutral signed execution evidence layer for AI agent tool calls. It records signed receipts across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes, then exposes historical execution evidence that agents, developers, or policy layers can inspect before delegation.
+XAIP is a provider-neutral signed execution evidence layer for AI agent tool calls. It records co-signed receipts — both the executing agent and the caller sign the same canonical record, so neither side can unilaterally fabricate one — across MCP, LangChain.js, OpenAI-compatible tool-call loops, and other runtimes, then exposes historical execution evidence that agents, developers, or policy layers can inspect before delegation.
 
 Receipts are the primary artifact. Trust scores are one derived view over those receipts — not a claim of absolute safety or correctness.
 

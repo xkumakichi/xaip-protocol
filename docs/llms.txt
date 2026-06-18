@@ -1,7 +1,9 @@
 # XAIP — Signed Execution Receipts for AI Agent Tool Calls
 
-> XAIP is a provider-neutral, open protocol for recording signed, hash-only
-> execution receipts of AI agent tool calls. It lets an agent inspect a tool,
+> XAIP is a provider-neutral, open protocol for recording co-signed, hash-only
+> execution receipts of AI agent tool calls — each signed by both the executing
+> agent and the caller, so neither side can unilaterally fabricate one. It lets
+> an agent inspect a tool,
 > skill, or agent's prior execution evidence before delegating work or
 > authorizing payment. Receipts are the primary artifact; trust scores are one
 > derived view over them.
@@ -18,9 +20,10 @@ forming first.
 
 ## How it works
 
-- Each tool call is recorded as a dual-signed Ed25519 receipt. Only hashes of
-  the task and result are stored — no raw input or output content leaves the
-  machine.
+- Each tool call is recorded as a receipt co-signed by both the executing agent
+  and the caller — dual Ed25519 signatures over the same JCS-canonical payload,
+  so neither party can unilaterally fabricate it. Only hashes of the task and
+  result are stored — no raw input or output content leaves the machine.
 - The signed payload is canonicalized with JCS (RFC 8785) so two parties who saw
   the same payload agree on its hash.
 - Receipts are portable across MCP, LangChain.js, OpenAI-compatible tool-call
