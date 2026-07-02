@@ -30,12 +30,14 @@ The portable core is:
 
 The portable receipt signal is:
 
+- `formatVersion` (`"1"` — the current wire format; signed)
 - `agentDid`
 - `callerDid`
 - `taskHash`
 - `resultHash`
 - `success`
 - `latencyMs`
+- `failureType` (always a string; `""` on success)
 - `timestamp`
 
 The current aggregator endpoint also requires `toolName`, `signature`, and the agent `publicKey` in the POST body. `callerSignature` and `callerPublicKey` are optional but recommended when the caller can co-sign.
@@ -69,8 +71,17 @@ function canonicalize(value: unknown): string {
   }).join(",")}}`;
 }
 
-function sha256short(value: string): string {
-  return crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
+// Hash preimage profile (draft -03 §3.5): text hashes its raw UTF-8 bytes;
+// absent values hash the empty string (sentinel e3b0c442...); structured JSON
+// hashes its JCS canonical form. Full 64-char digest — never truncate.
+function sha256hex(value: unknown): string {
+  const str =
+    value === undefined || value === null
+      ? ""
+      : typeof value === "string"
+        ? value
+        : canonicalize(value);
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 function signEd25519(payload: string, privateKeyHex: string): string {
@@ -83,6 +94,7 @@ function signEd25519(payload: string, privateKeyHex: string): string {
 }
 
 function receiptPayload(receipt: {
+  formatVersion?: string;
   agentDid: string;
   callerDid?: string;
   failureType?: string;
@@ -93,7 +105,7 @@ function receiptPayload(receipt: {
   timestamp: string;
   toolName: string;
 }): string {
-  return canonicalize({
+  const obj: Record<string, unknown> = {
     agentDid: receipt.agentDid,
     callerDid: receipt.callerDid ?? "",
     failureType: receipt.failureType ?? "",
@@ -103,7 +115,11 @@ function receiptPayload(receipt: {
     taskHash: receipt.taskHash,
     timestamp: receipt.timestamp,
     toolName: receipt.toolName,
-  });
+  };
+  // formatVersion is part of the signed payload when present ("1" today).
+  // toolMetadata, if you carry it, is NEVER part of the signed payload.
+  if (receipt.formatVersion !== undefined) obj.formatVersion = receipt.formatVersion;
+  return canonicalize(obj);
 }
 
 async function runWithXAIPReceipt<TInput, TOutput>(params: {
@@ -115,9 +131,10 @@ async function runWithXAIPReceipt<TInput, TOutput>(params: {
   aggregatorUrl: string;
 }): Promise<TOutput> {
   const started = Date.now();
-  const taskHash = sha256short(canonicalize(params.input));
+  const taskHash = sha256hex(params.input);
 
   async function submit(base: {
+    formatVersion: string;
     agentDid: string;
     callerDid?: string;
     toolName: string;
@@ -125,7 +142,7 @@ async function runWithXAIPReceipt<TInput, TOutput>(params: {
     resultHash: string;
     success: boolean;
     latencyMs: number;
-    failureType?: string;
+    failureType: string;
     timestamp: string;
   }) {
     const payload = receiptPayload(base);
@@ -153,24 +170,29 @@ async function runWithXAIPReceipt<TInput, TOutput>(params: {
     const latencyMs = Date.now() - started;
 
     await submit({
+      formatVersion: "1",
       agentDid: params.agent.did,
-      callerDid: params.caller?.did,
+      // callerDid may equal agentDid when there is no delegation
+      callerDid: params.caller?.did ?? params.agent.did,
       toolName: params.toolName,
       taskHash,
-      resultHash: sha256short(canonicalize(output)),
+      resultHash: sha256hex(output),
       success: true,
       latencyMs,
+      failureType: "",
       timestamp: new Date().toISOString(),
     });
 
     return output;
   } catch (error) {
     await submit({
+      formatVersion: "1",
       agentDid: params.agent.did,
-      callerDid: params.caller?.did,
+      callerDid: params.caller?.did ?? params.agent.did,
       toolName: params.toolName,
       taskHash,
-      resultHash: "",
+      // No output exists: the empty-input sentinel (sha256 of ""), never ""
+      resultHash: sha256hex(undefined),
       success: false,
       latencyMs: Date.now() - started,
       failureType: "error",
@@ -191,21 +213,25 @@ The current aggregator accepts `POST /receipts` with this body shape:
 ```json
 {
   "receipt": {
+    "formatVersion": "1",
     "agentDid": "did:web:example-tool",
     "callerDid": "did:key:...",
     "toolName": "search",
-    "taskHash": "abc123...",
-    "resultHash": "def456...",
+    "taskHash": "<64 lowercase hex chars — full SHA-256, never truncated>",
+    "resultHash": "<64 lowercase hex chars>",
     "success": true,
     "latencyMs": 42,
-    "timestamp": "2026-04-24T00:00:00.000Z",
-    "signature": "<agent Ed25519 signature hex>",
-    "callerSignature": "<optional caller Ed25519 signature hex>"
+    "failureType": "",
+    "timestamp": "2026-07-02T00:00:00.000Z",
+    "signature": "<agent Ed25519 signature hex, 128 chars>",
+    "callerSignature": "<optional caller Ed25519 signature hex, 128 chars>"
   },
   "publicKey": "<agent SPKI public key hex>",
   "callerPublicKey": "<optional caller SPKI public key hex>"
 }
 ```
+
+`formatVersion: "1"` receipts are validated fail-closed: the aggregator rejects them if `taskHash`/`resultHash` are not full 64-char lowercase hex, or if `failureType` is inconsistent with `success`. A complete, verifiable example receipt and executable conformance vectors live in [`docs/spec/test-vectors/`](spec/test-vectors/receipts-v1-vectors.json) — run `node check.mjs` there to validate your implementation byte-for-byte.
 
 ```bash
 curl -X POST "https://xaip-aggregator.kuma-github.workers.dev/receipts" \

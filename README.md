@@ -326,14 +326,15 @@ See [Emit XAIP receipts from anything](./docs/emit-from-anything.md) for the pro
 
 The XAIP receipt wire format is published as an individual Internet-Draft on IETF Datatracker:
 
-- `draft-xkumakichi-xaip-receipts-01` (current revision)
+- `draft-xkumakichi-xaip-receipts-03` (current revision; [working copy](./docs/spec/draft-xkumakichi-xaip-receipts-03.md))
 - <https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/>
+- Executable conformance test vectors: [`docs/spec/test-vectors/`](./docs/spec/test-vectors/) — every hash, canonical payload, and signature is real; `node check.mjs` re-derives all of them (Node ≥ 18, no dependencies)
 
 This is an individual Internet-Draft. It is not an IETF standard, not IETF-approved, and has no formal standing in the IETF standards process. The draft scope is the receipt wire format only — scoring, aggregation, and decision logic are deployment policy and out of scope of the draft itself.
 
 **Cite as** (work in progress — cite the specific revision for reproducibility):
 
-> xkumakichi, "Signed Execution Receipts for AI Agent Tool Calls (XAIP Receipts)", Work in Progress, Internet-Draft, draft-xkumakichi-xaip-receipts-01, 19 June 2026, <https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/>.
+> xkumakichi, "Signed Execution Receipts for AI Agent Tool Calls (XAIP Receipts)", Work in Progress, Internet-Draft, draft-xkumakichi-xaip-receipts-03, 2 July 2026, <https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/>.
 
 BibTeX and BibXML exports are available from the Datatracker page linked above.
 

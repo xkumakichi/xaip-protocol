@@ -1,0 +1,201 @@
+{
+  "description": "Conformance test vectors for draft-xkumakichi-xaip-receipts-03 (wire formatVersion \"1\"). Every hash, canonical payload, and signature in this file is real and reproducible. Run `node check.mjs` (Node >= 18, no dependencies) to re-derive every value from this file and verify all signatures; the checker fails on any drift.",
+  "draft": "draft-xkumakichi-xaip-receipts-03",
+  "formatVersion": "1",
+  "keys": {
+    "note": "TEST keys only, generated for these vectors. Never reuse for anything. DIDs are illustrative; verification here uses the embedded SPKI keys directly (DID resolution is out of band).",
+    "agent": {
+      "did": "did:web:translator.example",
+      "publicKeySpkiHex": "302a300506032b65700321008dc60cf2bbe6c08d70dfb1d5c5acd3e46f381b6c0f09c0e183a50ca3d6d7df9e",
+      "privateKeyPkcs8Hex": "302e020100300506032b657004220420ef1e30bcbb47b350bb45b9fac5fd65263a7a0ce049c1ad02b2c544ed80ac47ca"
+    },
+    "caller": {
+      "did": "did:web:orchestrator.example",
+      "publicKeySpkiHex": "302a300506032b6570032100f4b6d713b8481efc2b1a6e2c1a3a4c87b66ecf57d1d3d728f6864884a5d30c6b",
+      "privateKeyPkcs8Hex": "302e020100300506032b657004220420e2e91bcaa4e71cac2a9269580a44e9bf5a16e15b4f60f22163ae74bb409d0009"
+    }
+  },
+  "preimageVectors": [
+    {
+      "name": "string_raw_utf8",
+      "description": "Text values hash their raw UTF-8 content bytes (5 bytes for 'hello'), NOT the JSON-string serialization. Formats that hash the JSON form ('\"hello\"', 7 bytes) produce the wrongHash value below; profile 1 deliberately hashes content bytes so the hash of a text value equals the hash of the same bytes delivered as raw binary.",
+      "value": "hello",
+      "expectedHash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      "wrongHashJsonForm": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+    },
+    {
+      "name": "unicode_string_raw_utf8",
+      "description": "Non-ASCII text hashes its raw UTF-8 bytes with no Unicode normalization applied.",
+      "value": "こんにちは",
+      "expectedHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c"
+    },
+    {
+      "name": "json_key_order_invariance",
+      "description": "Structured JSON values hash the UTF-8 bytes of their JCS (RFC 8785) canonical form, so member order cannot change the hash. This value reproduces in independent RFC 8785 implementations.",
+      "valueSpellingA": { "a": 1, "b": 2 },
+      "valueSpellingB": { "b": 2, "a": 1 },
+      "expectedHash": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+    },
+    {
+      "name": "json_object_task",
+      "description": "The example receipt's task input. JCS sorts members lexicographically before hashing.",
+      "value": { "text": "hello", "target": "ja" },
+      "expectedCanonical": "{\"target\":\"ja\",\"text\":\"hello\"}",
+      "expectedHash": "a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103"
+    },
+    {
+      "name": "empty_input_sentinel",
+      "description": "An absent input or output (null, undefined, or no output at all — e.g. a failed call) hashes the empty byte string. This sentinel is the REQUIRED resultHash for formatVersion 1 failure receipts that commit to no output.",
+      "value": null,
+      "expectedHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "payloadVectors": [
+    {
+      "name": "v1_canonical_payload",
+      "description": "Canonical payload of a formatVersion 1 receipt: the nine base fields plus formatVersion, JCS-serialized (formatVersion sorts between failureType and latencyMs). signature/callerSignature/toolMetadata are never included.",
+      "fields": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103",
+        "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c",
+        "success": true,
+        "latencyMs": 142,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:23:45.678Z",
+        "formatVersion": "1"
+      },
+      "expectedPayload": "{\"agentDid\":\"did:web:translator.example\",\"callerDid\":\"did:web:orchestrator.example\",\"failureType\":\"\",\"formatVersion\":\"1\",\"latencyMs\":142,\"resultHash\":\"125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c\",\"success\":true,\"taskHash\":\"a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103\",\"timestamp\":\"2026-07-02T01:23:45.678Z\",\"toolName\":\"translate\"}"
+    },
+    {
+      "name": "toolmetadata_excluded_from_payload",
+      "description": "toolMetadata is unsigned hint data (draft §3.1/§6): a receipt carrying it has a canonical payload byte-identical to the same receipt without it.",
+      "fields": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103",
+        "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c",
+        "success": true,
+        "latencyMs": 142,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:23:45.678Z",
+        "formatVersion": "1",
+        "toolMetadata": { "xaip": { "class": "advisory" } }
+      },
+      "expectedPayload": "{\"agentDid\":\"did:web:translator.example\",\"callerDid\":\"did:web:orchestrator.example\",\"failureType\":\"\",\"formatVersion\":\"1\",\"latencyMs\":142,\"resultHash\":\"125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c\",\"success\":true,\"taskHash\":\"a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103\",\"timestamp\":\"2026-07-02T01:23:45.678Z\",\"toolName\":\"translate\"}"
+    },
+    {
+      "name": "legacy_payload_nine_fields",
+      "description": "Legacy receipts (no formatVersion) canonicalize the nine base fields only. Verifiers reconstruct the payload from the fields exactly as received.",
+      "fields": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "6ce69f432bc71707a79f22bd6201105a998dfe907e70ad64dd41bf0b01abb8a9",
+        "resultHash": "2689367b205c16ce32ed4200942b8b8b1e262dfc70d9bc9fbc77c49699a4f1df",
+        "success": true,
+        "latencyMs": 88,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:25:00.000Z"
+      },
+      "expectedPayload": "{\"agentDid\":\"did:web:translator.example\",\"callerDid\":\"did:web:orchestrator.example\",\"failureType\":\"\",\"latencyMs\":88,\"resultHash\":\"2689367b205c16ce32ed4200942b8b8b1e262dfc70d9bc9fbc77c49699a4f1df\",\"success\":true,\"taskHash\":\"6ce69f432bc71707a79f22bd6201105a998dfe907e70ad64dd41bf0b01abb8a9\",\"timestamp\":\"2026-07-02T01:25:00.000Z\",\"toolName\":\"translate\"}"
+    }
+  ],
+  "receiptVectors": [
+    {
+      "name": "v1_cosigned_valid",
+      "description": "A complete, verifiable formatVersion 1 receipt (the §2.1 example of the draft). Both signatures verify against the embedded test keys over the v1_canonical_payload bytes.",
+      "receipt": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103",
+        "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c",
+        "success": true,
+        "latencyMs": 142,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:23:45.678Z",
+        "formatVersion": "1",
+        "signature": "1fbf11f917c6404db0476f4542f981b0bd00f3391ffa2a859f1f700b520228ac13f6d1b8a09394012290830c908d7b7906c4e3498d9dc41f2badb8bc7de97905",
+        "callerSignature": "5dadd87738832b65557072e15877ace0abe74f9c21ea7c32cc64b838e4379f6e15f974ff05aa65f4adcc320c01a4b0d4dc72bc154fcc12af7b696b485a51c40c"
+      },
+      "expect": { "agentSignatureValid": true, "callerSignatureValid": true }
+    },
+    {
+      "name": "v1_failure_sentinel",
+      "description": "A failure receipt: success=false, failureType from the registry, resultHash = the empty-input sentinel (no output existed). Executor signature only.",
+      "receipt": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "9f6d2127b50874acf02fd5a1e5396a04dee2d421a30b58b9d0977ef1251d6b05",
+        "resultHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "success": false,
+        "latencyMs": 30001,
+        "failureType": "timeout",
+        "timestamp": "2026-07-02T01:24:10.000Z",
+        "formatVersion": "1",
+        "signature": "efa366021e60647e1cc78751f8d225e5c8fa0b5c1f9393079de2661eaf61f344e8db23a1d5d2726f1f7d0732f2a08d9052709d07ef89574badf224a19a076706"
+      },
+      "expect": { "agentSignatureValid": true }
+    },
+    {
+      "name": "legacy_agent_only",
+      "description": "A legacy receipt (no formatVersion) remains verifiable under the nine-field payload rule.",
+      "receipt": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "6ce69f432bc71707a79f22bd6201105a998dfe907e70ad64dd41bf0b01abb8a9",
+        "resultHash": "2689367b205c16ce32ed4200942b8b8b1e262dfc70d9bc9fbc77c49699a4f1df",
+        "success": true,
+        "latencyMs": 88,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:25:00.000Z",
+        "signature": "9b5a75b5fc4071b851b2d09b34a920710ed67619edfa7ba5c550a69f07c585bbdaeead5d43ee24e11e73e733858c4df5fe9ff4c5349f05a5e684fab30a565402"
+      },
+      "expect": { "agentSignatureValid": true }
+    },
+    {
+      "name": "tampered_success_flip",
+      "description": "Tamper detection: the v1_cosigned_valid receipt with success flipped to false. Both signatures MUST fail verification.",
+      "receipt": {
+        "agentDid": "did:web:translator.example",
+        "callerDid": "did:web:orchestrator.example",
+        "toolName": "translate",
+        "taskHash": "a1f15dbb98240bfcd2ae4e21497f0fc011e99397929d2836bff327ff09254103",
+        "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c",
+        "success": false,
+        "latencyMs": 142,
+        "failureType": "",
+        "timestamp": "2026-07-02T01:23:45.678Z",
+        "formatVersion": "1",
+        "signature": "1fbf11f917c6404db0476f4542f981b0bd00f3391ffa2a859f1f700b520228ac13f6d1b8a09394012290830c908d7b7906c4e3498d9dc41f2badb8bc7de97905",
+        "callerSignature": "5dadd87738832b65557072e15877ace0abe74f9c21ea7c32cc64b838e4379f6e15f974ff05aa65f4adcc320c01a4b0d4dc72bc154fcc12af7b696b485a51c40c"
+      },
+      "expect": { "agentSignatureValid": false, "callerSignatureValid": false }
+    }
+  ],
+  "rejectionVectors": [
+    {
+      "name": "v1_truncated_hash",
+      "description": "formatVersion 1 requires taskHash/resultHash to be exactly 64 lowercase hex chars. A 64-bit truncation is collision-findable (~2^32 work) and MUST be rejected fail-closed, regardless of signature validity.",
+      "receiptFragment": { "formatVersion": "1", "taskHash": "2cf24dba5fb0a30e", "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c" },
+      "mustReject": "taskHash is not 64 lowercase hex characters"
+    },
+    {
+      "name": "v1_uppercase_hash",
+      "description": "Hex case changes bytes: uppercase hashes violate the lowercase MUST and are rejected fail-closed.",
+      "receiptFragment": { "formatVersion": "1", "taskHash": "A1F15DBB98240BFCD2AE4E21497F0FC011E99397929D2836BFF327FF09254103", "resultHash": "125aeadf27b0459b8760c13a3d80912dfa8a81a68261906f60d87f4a0268646c" },
+      "mustReject": "taskHash is not 64 lowercase hex characters"
+    },
+    {
+      "name": "v1_failuretype_inconsistent",
+      "description": "failureType MUST be \"\" exactly when success is true. A successful receipt carrying a failure type is rejected fail-closed.",
+      "receiptFragment": { "formatVersion": "1", "success": true, "failureType": "error" },
+      "mustReject": "failureType must be \"\" when success is true"
+    }
+  ]
+}

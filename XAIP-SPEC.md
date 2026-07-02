@@ -444,7 +444,7 @@ interface XAIPPlugin {
 
 All payloads are JSON. Canonical form uses JCS (RFC 8785). Signatures use Ed25519 (RFC 8032) over the canonical payload bytes.
 
-**Hash Function:** SHA-256, truncated to 16 hex characters for taskHash/resultHash.
+**Hash Function:** SHA-256, full 64 lowercase hex characters for taskHash/resultHash (wire `formatVersion` `"1"`; see draft-xkumakichi-xaip-receipts-03 §3.5 for the preimage profile). Earlier releases truncated to 16 hex characters; those legacy hashes remain readable but are no longer produced — a 64-bit digest is collision-findable and unsuitable as a commitment.
 
 ## 9. Conformance
 

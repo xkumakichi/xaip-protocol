@@ -44,6 +44,7 @@ forming first.
 ## Spec and implementation
 
 - IETF Internet-Draft (individual submission, no formal IETF standing): https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/
+- Executable conformance test vectors (wire formatVersion "1": real hashes, canonical payloads, Ed25519 signatures; dependency-free checker): https://github.com/xkumakichi/xaip-protocol/tree/main/docs/spec/test-vectors
 - Source code (MIT): https://github.com/xkumakichi/xaip-protocol
 - npm packages: xaip-sdk, xaip-claude-hook, xaip-langchain, xaip-openai
 

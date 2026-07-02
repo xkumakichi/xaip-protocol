@@ -127,7 +127,7 @@ If any of those were a reason you're considering this — they aren't here. The 
 
 ## Privacy and security
 
-- Receipts contain `taskHash` and `resultHash` (SHA-256 truncated to 16 hex chars), not the raw tool inputs/outputs. The aggregator cannot reconstruct what you searched for or read.
+- Receipts contain `taskHash` and `resultHash` (full SHA-256, 64 hex chars), not the raw tool inputs/outputs. The aggregator cannot reconstruct what you searched for or read.
 - Your caller DID is a public key hash. It is linkable across your own runs (by design — that's how caller diversity accumulates), but it does not link to your identity unless you publish the binding yourself.
 - All network traffic is HTTPS.
 - The script does not phone home, exfiltrate file contents, or read anything outside the tool calls it explicitly makes.
