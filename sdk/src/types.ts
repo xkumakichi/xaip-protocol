@@ -72,12 +72,25 @@ export interface ExecutionReceipt {
   resultHash: string;
   success: boolean;
   latencyMs: number;
-  failureType?: FailureType;
+  /**
+   * Wire format: always present as a string — one of FailureType when
+   * success is false, and exactly "" when success is true (never null;
+   * keeps the JCS canonical payload's value type stable).
+   */
+  failureType?: FailureType | "";
   timestamp: string;
   toolMetadata?: ToolMetadata;
   signature: string;
   callerDid?: string;
   callerSignature?: string;
+  /**
+   * Wire-format version. "1" = first explicitly versioned format:
+   * 64-char lowercase hex hashes, toolMetadata excluded from the signed
+   * payload, empty-input sentinel for absent inputs/outputs, callerDid
+   * always present (equals agentDid when there is no delegation).
+   * Absent = legacy pre-versioning receipt.
+   */
+  formatVersion?: string;
 }
 
 // ─── Trust Score ─────────────────────────────────────

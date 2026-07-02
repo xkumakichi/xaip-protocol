@@ -122,8 +122,19 @@ function sign(payload, privateKeyHex) {
   return crypto.sign(null, Buffer.from(payload), key).toString("hex");
 }
 
-function sha256short(v) {
-  return crypto.createHash("sha256").update(v).digest("hex").slice(0, 16);
+function sha256hex(value) {
+  // Preimage profile (draft -03 RECOMMENDED): strings hash their raw UTF-8
+  // bytes; null/undefined hash the empty string (sentinel e3b0c442...);
+  // other JSON values hash their JCS canonical form so key order cannot
+  // change the hash. Full 64-char digest — the legacy 16-char truncation is
+  // collision-findable (~2^32 work) and is no longer produced.
+  const str =
+    value === undefined || value === null
+      ? ""
+      : typeof value === "string"
+        ? value
+        : canonicalize(value);
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 function parseMcpTool(toolName) {
@@ -171,11 +182,13 @@ function pendingPath(toolUseId) {
 
 async function postReceipt(agent, caller, data) {
   const timestamp = new Date().toISOString();
-  const taskHash = sha256short(JSON.stringify(data.input));
-  const resultHash = sha256short(JSON.stringify(data.response));
-  const failureType = data.success ? "" : "tool_error";
+  const taskHash = sha256hex(data.input);
+  const resultHash = sha256hex(data.response);
+  // "error" is the registry catch-all (draft §5: timeout | validation | error).
+  const failureType = data.success ? "" : "error";
 
   const base = {
+    formatVersion: "1",
     agentDid: agent.did,
     callerDid: caller.did,
     toolName: data.toolName,
@@ -191,6 +204,7 @@ async function postReceipt(agent, caller, data) {
     agentDid: base.agentDid,
     callerDid: base.callerDid,
     failureType: base.failureType,
+    formatVersion: base.formatVersion,
     latencyMs: base.latencyMs,
     resultHash: base.resultHash,
     success: base.success,

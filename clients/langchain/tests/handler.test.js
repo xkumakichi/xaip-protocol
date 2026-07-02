@@ -51,7 +51,8 @@ function makeKeyPair(did) {
 }
 
 function recreatePayload(receipt) {
-  // Mirror the canonical payload object built in _emit.
+  // Mirrors the spec's canonical-payload rule: formatVersion is signed when
+  // present; toolMetadata is NEVER part of the signed payload (unsigned hints).
   const payloadObject = {
     agentDid: receipt.agentDid,
     callerDid: receipt.callerDid,
@@ -63,7 +64,7 @@ function recreatePayload(receipt) {
     timestamp: receipt.timestamp,
     toolName: receipt.toolName,
   };
-  if (receipt.toolMetadata) payloadObject.toolMetadata = receipt.toolMetadata;
+  if (receipt.formatVersion !== undefined) payloadObject.formatVersion = receipt.formatVersion;
   return canonicalize(payloadObject);
 }
 
@@ -105,8 +106,9 @@ describe("XAIPCallbackHandler integration", () => {
     expect(body.receipt.success).toBe(true);
     expect(body.receipt.agentDid).toMatch(/^did:web:lc-doc-search$/);
     expect(body.receipt.callerDid).toMatch(/^did:key:[0-9a-f]+$/);
-    expect(body.receipt.taskHash).toMatch(/^[0-9a-f]{16}$/);
-    expect(body.receipt.resultHash).toMatch(/^[0-9a-f]{16}$/);
+    expect(body.receipt.taskHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.receipt.resultHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.receipt.formatVersion).toBe("1");
     expect(typeof body.receipt.latencyMs).toBe("number");
     expect(body.receipt.latencyMs).toBeGreaterThanOrEqual(0);
     expect(body.publicKey).toMatch(/^[0-9a-f]+$/);

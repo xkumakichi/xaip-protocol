@@ -83,8 +83,19 @@ function signPayload(payload: string, privateKeyHex: string): string {
   return crypto.sign(null, Buffer.from(payload), key).toString("hex");
 }
 
-function sha256short(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex").slice(0, 16);
+function sha256hex(value: unknown): string {
+  // Preimage profile (draft -03 RECOMMENDED): strings hash their raw UTF-8
+  // bytes; null/undefined hash the empty string (sentinel e3b0c442...);
+  // other JSON values hash their JCS canonical form so key order cannot
+  // change the hash. Full 64-char digest — the legacy 16-char truncation is
+  // collision-findable (~2^32 work) and is no longer produced.
+  const str =
+    value === undefined || value === null
+      ? ""
+      : typeof value === "string"
+        ? value
+        : canonicalize(value);
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 // ─── Key management ───────────────────────────────────────────────────────────
@@ -162,11 +173,14 @@ async function postReceipt(params: {
   const base = {
     agentDid: params.agentKp.did,
     callerDid: params.callerKp.did,
-    failureType: "",
+    // "error" is the registry catch-all (draft §5); failureType must be ""
+    // exactly when success is true, and non-empty when success is false.
+    failureType: params.success ? "" : "error",
+    formatVersion: "1",
     latencyMs: params.latencyMs,
-    resultHash: sha256short(JSON.stringify(params.result)),
+    resultHash: sha256hex(params.result),
     success: params.success,
-    taskHash: sha256short(JSON.stringify(params.taskInput)),
+    taskHash: sha256hex(params.taskInput),
     timestamp: new Date().toISOString(),
     toolName: params.toolName,
   };
@@ -221,7 +235,7 @@ const TOOLS: ToolCall[] = [
         success: r.ok && r.body.length > 0,
         latencyMs: r.latencyMs,
         taskInput: { endpoint: "/zen" },
-        result: { status: r.status, bodyHash: sha256short(r.body) },
+        result: { status: r.status, bodyHash: sha256hex(r.body) },
       };
     },
   },
@@ -234,7 +248,7 @@ const TOOLS: ToolCall[] = [
         success: r.ok,
         latencyMs: r.latencyMs,
         taskInput: { endpoint: "/uuid" },
-        result: { status: r.status, bodyHash: sha256short(r.body) },
+        result: { status: r.status, bodyHash: sha256hex(r.body) },
       };
     },
   },
@@ -249,7 +263,7 @@ const TOOLS: ToolCall[] = [
         success: r.ok,
         latencyMs: r.latencyMs,
         taskInput: { endpoint: "/headers" },
-        result: { status: r.status, bodyHash: sha256short(r.body) },
+        result: { status: r.status, bodyHash: sha256hex(r.body) },
       };
     },
   },
@@ -264,7 +278,7 @@ const TOOLS: ToolCall[] = [
         success: r.ok,
         latencyMs: r.latencyMs,
         taskInput: { endpoint: "/health" },
-        result: { status: r.status, bodyHash: sha256short(r.body) },
+        result: { status: r.status, bodyHash: sha256hex(r.body) },
       };
     },
   },
@@ -279,7 +293,7 @@ const TOOLS: ToolCall[] = [
         success: r.ok,
         latencyMs: r.latencyMs,
         taskInput: { endpoint: "/v1/servers" },
-        result: { status: r.status, bodyHash: sha256short(r.body) },
+        result: { status: r.status, bodyHash: sha256hex(r.body) },
       };
     },
   },

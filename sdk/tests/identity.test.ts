@@ -198,17 +198,22 @@ describe("receiptPayload (JCS / RFC 8785)", () => {
     expect(JSON.parse(payload)).not.toHaveProperty("toolMetadata");
   });
 
-  it("includes v0.5 toolMetadata in the signed payload when present", () => {
+  it("EXCLUDES toolMetadata from the signed payload (unsigned hint data, draft §3.1/§6)", () => {
     const payload = receiptPayload(v05Receipt as any);
     const parsed = JSON.parse(payload);
 
-    expect(parsed.toolMetadata.xaip.class).toBe("settlement");
-    expect(parsed.toolMetadata.xaip.verifiabilityHint).toBe("anchored");
-    expect(parsed.toolMetadata.xaip.settlementLayer).toBe("xrpl-testnet");
-    expect(parsed.toolMetadata.xaip.anchorTxHash).toBe(
-      "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789"
-    );
-    expect(parsed.toolMetadata.xaip.anchorLedgerIndex).toBe(16751127);
+    expect(parsed).not.toHaveProperty("toolMetadata");
+    // The payload must be byte-identical to the same receipt without metadata
+    const { toolMetadata: _dropped, ...bare } = v05Receipt as any;
+    expect(receiptPayload(bare)).toBe(payload);
+  });
+
+  it("includes formatVersion in the signed payload when present (v1 receipts)", () => {
+    const payload = receiptPayload({ ...(v04Receipt as any), formatVersion: "1" });
+    expect(JSON.parse(payload).formatVersion).toBe("1");
+    expect(payload).toContain('"formatVersion":"1"');
+    // Legacy receipts (no formatVersion) must not gain the field
+    expect(receiptPayload(v04Receipt as any)).not.toContain("formatVersion");
   });
 
   it("verifies old and metadata-bearing receipts with their canonical payloads", () => {
@@ -307,10 +312,31 @@ describe("createSigningDelegate", () => {
 });
 
 describe("hash", () => {
-  it("returns 16 hex chars", () => {
+  it("returns the full 64-char SHA-256 hex digest", () => {
     const h = hash({ foo: "bar" });
-    expect(h).toHaveLength(16);
-    expect(h).toMatch(/^[0-9a-f]{16}$/);
+    expect(h).toHaveLength(64);
+    expect(h).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("hashes strings as their raw UTF-8 bytes (preimage profile)", () => {
+    expect(hash("hello")).toBe(
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    );
+  });
+
+  it("hashes null/undefined/empty as the empty-input sentinel", () => {
+    const sentinel =
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    expect(hash(undefined)).toBe(sentinel);
+    expect(hash(null)).toBe(sentinel);
+    expect(hash("")).toBe(sentinel);
+  });
+
+  it("hashes JSON values via JCS: key order cannot change the hash", () => {
+    expect(hash({ a: 1, b: 2 })).toBe(hash({ b: 2, a: 1 }));
+    expect(hash({ z: [1, 2], a: { c: 1, b: 2 } })).toBe(
+      hash({ a: { b: 2, c: 1 }, z: [1, 2] })
+    );
   });
 
   it("is deterministic", () => {

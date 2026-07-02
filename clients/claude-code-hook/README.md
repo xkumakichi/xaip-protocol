@@ -67,8 +67,8 @@ Each MCP tool call produces one Ed25519-signed receipt:
 | `agentDid` | `did:web:context7` |
 | `callerDid` | `did:key:a1c6cd34…` (per-install, yours alone) |
 | `toolName` | `resolve-library-id` |
-| `taskHash` | sha256(input).slice(0,16) — privacy-preserving |
-| `resultHash` | sha256(response).slice(0,16) |
+| `taskHash` | full sha256 of the canonicalized input (64 hex chars) — privacy-preserving |
+| `resultHash` | full sha256 of the canonicalized response (64 hex chars) |
 | `success` | heuristic from response text |
 | `latencyMs` | wall-clock from PreToolUse to PostToolUse |
 | `timestamp` | ISO-8601 |

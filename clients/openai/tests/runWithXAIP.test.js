@@ -32,6 +32,8 @@ function verifyEd25519(payload, signatureHex, publicKeyHex) {
 }
 
 function recreatePayload(receipt) {
+  // Mirrors the spec's canonical-payload rule: formatVersion is signed when
+  // present; toolMetadata is NEVER part of the signed payload (unsigned hints).
   const obj = {
     agentDid: receipt.agentDid,
     callerDid: receipt.callerDid,
@@ -43,7 +45,7 @@ function recreatePayload(receipt) {
     timestamp: receipt.timestamp,
     toolName: receipt.toolName,
   };
-  if (receipt.toolMetadata) obj.toolMetadata = receipt.toolMetadata;
+  if (receipt.formatVersion !== undefined) obj.formatVersion = receipt.formatVersion;
   return canonicalize(obj);
 }
 
@@ -93,7 +95,8 @@ describe("runWithXAIP", () => {
     expect(body.receipt.success).toBe(true);
     expect(body.receipt.agentDid).toBe("did:web:oai-search-docs");
     expect(body.receipt.callerDid).toMatch(/^did:key:[0-9a-f]+$/);
-    expect(body.receipt.taskHash).toMatch(/^[0-9a-f]{16}$/);
+    expect(body.receipt.taskHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.receipt.formatVersion).toBe("1");
 
     const payload = recreatePayload(body.receipt);
     expect(verifyEd25519(payload, body.receipt.signature, body.publicKey)).toBe(true);
@@ -183,7 +186,7 @@ describe("runWithXAIP", () => {
     expect(calls.length).toBe(1);
     const body = JSON.parse(calls[0].init.body);
     expect(body.receipt.success).toBe(true);
-    expect(body.receipt.resultHash).toMatch(/^[0-9a-f]{16}$/);
+    expect(body.receipt.resultHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   test("XAIP_AGGREGATOR_URL env override is honored", async () => {

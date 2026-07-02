@@ -122,8 +122,25 @@ function sign(payload, privateKeyHex) {
   return crypto.sign(null, Buffer.from(payload), key).toString("hex");
 }
 
-function sha256short(v) {
-  return crypto.createHash("sha256").update(v).digest("hex").slice(0, 16);
+function sha256hex(value) {
+  // Preimage profile (draft -03 RECOMMENDED): strings hash their raw UTF-8
+  // bytes; null/undefined hash the empty string (sentinel e3b0c442...);
+  // other JSON values hash their JCS canonical form so key order cannot
+  // change the hash. Full 64-char digest — the legacy 16-char truncation is
+  // collision-findable (~2^32 work) and is no longer produced.
+  let str;
+  if (value === undefined || value === null) str = "";
+  else if (typeof value === "string") str = value;
+  else {
+    try {
+      str = canonicalize(value);
+    } catch (_) {
+      // Circular references / non-serializable values fall back to a stable
+      // marker so the receipt still gets a deterministic hash.
+      str = '{"_xaip_unserializable":true}';
+    }
+  }
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 /**
@@ -157,7 +174,9 @@ function inferFailureType(err) {
   if (msg.includes("rate") && msg.includes("limit")) return "rate_limit";
   if (msg.includes("unauthorized") || msg.includes("forbidden")) return "auth";
   if (msg.includes("valid") || msg.includes("schema") || msg.includes("parse")) return "validation";
-  return "tool_error";
+  // "error" is the registry catch-all (draft §5: timeout | validation | error);
+  // rate_limit / auth above are deployment extension values permitted by §5.
+  return "error";
 }
 
 /**
@@ -258,10 +277,11 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
       const latencyMs = Date.now() - start;
       const failureType = success ? "" : inferFailureType(err);
       const timestamp = new Date().toISOString();
-      const taskHash = sha256short(JSON.stringify(input));
-      const resultHash = sha256short(JSON.stringify(output));
+      const taskHash = sha256hex(input);
+      const resultHash = sha256hex(output);
 
       const base = {
+        formatVersion: "1",
         agentDid: agent.did,
         callerDid: caller.did,
         toolName,
@@ -279,10 +299,13 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
         } catch (_) {}
       }
 
+      // toolMetadata is deliberately NOT part of the signed payload (draft
+      // §3.1 / §6): it is unsigned hint data. It still travels on the receipt.
       const payloadObject = {
         agentDid: base.agentDid,
         callerDid: base.callerDid,
         failureType: base.failureType,
+        formatVersion: base.formatVersion,
         latencyMs: base.latencyMs,
         resultHash: base.resultHash,
         success: base.success,
@@ -290,7 +313,6 @@ class XAIPCallbackHandler extends BaseCallbackHandler {
         timestamp: base.timestamp,
         toolName: base.toolName,
       };
-      if (base.toolMetadata) payloadObject.toolMetadata = base.toolMetadata;
       const payload = canonicalize(payloadObject);
 
       const signature = sign(payload, agent.privateKey);
@@ -323,7 +345,7 @@ module.exports.default = XAIPCallbackHandler;
 // Internal helpers exposed for tests only. Not part of the stable public API.
 module.exports.__internals = {
   canonicalize,
-  sha256short,
+  sha256hex,
   inferFailureType,
   slugify,
   resolveToolName,

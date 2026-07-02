@@ -61,15 +61,20 @@ interface ReceiptParams {
  */
 async function createReceipt(p: ReceiptParams): Promise<void> {
   const receiptData: Omit<ExecutionReceipt, "signature" | "callerSignature"> = {
+    formatVersion: "1",
     agentDid: p.did,
     toolName: p.toolName,
     taskHash: p.taskHash,
     resultHash: p.resultHash,
     success: p.success,
     latencyMs: p.latencyMs,
-    failureType: p.failureType,
+    // Always a string on the wire: "" on success (draft §2 / §5). Leaving it
+    // undefined would drop the field from the receipt JSON entirely.
+    failureType: p.failureType ?? "",
     timestamp: new Date().toISOString(),
-    callerDid: p.config?.callerSigner?.did,
+    // callerDid is REQUIRED in the wire format; it MAY equal agentDid when
+    // there is no delegation (draft §2). Legacy receipts omitted it.
+    callerDid: p.config?.callerSigner?.did ?? p.did,
   };
 
   const payload = receiptPayload(receiptData);
@@ -194,8 +199,11 @@ export async function withXAIP(
           const latencyMs = Date.now() - startTime;
           const failureType = classifyFailure(error, latencyMs);
 
+          // No output exists on failure: resultHash is the empty-input
+          // sentinel (SHA-256 of the empty string), never an empty field —
+          // resultHash is REQUIRED 64-char hex in the wire format.
           await createReceipt({
-            did: did!.id, toolName, taskHash: inputH, resultHash: "",
+            did: did!.id, toolName, taskHash: inputH, resultHash: hash(""),
             success: false, latencyMs, failureType, privateKey, config, store, publicKey, log,
           });
 

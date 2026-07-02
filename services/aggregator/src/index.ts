@@ -57,6 +57,8 @@ interface ReceiptData {
   toolMetadata?: ToolMetadata;
   signature: string;
   callerSignature?: string;
+  /** "1" = versioned wire format (64-char hashes, toolMetadata unsigned). Absent = legacy. */
+  formatVersion?: string;
 }
 
 interface ToolMetadata {
@@ -87,9 +89,12 @@ function receiptPayload(r: Omit<ReceiptData, "signature" | "callerSignature">): 
     timestamp: r.timestamp,
     toolName: r.toolName,
   };
-  if (r.toolMetadata !== undefined) {
-    obj.toolMetadata = r.toolMetadata;
+  if (r.formatVersion !== undefined) {
+    obj.formatVersion = r.formatVersion;
   }
+  // toolMetadata is deliberately EXCLUDED from the canonical payload — it is
+  // unsigned, deployment-defined hint data (draft §3.1 / §6). Pre-versioning
+  // producers incorrectly signed it; formatVersion "1" receipts never do.
   return canonicalize(obj);
 }
 
@@ -648,6 +653,40 @@ async function handlePostReceipts(
     return jsonResponse({ error: "Receipt timestamp out of acceptable range" }, 400);
   }
 
+  // formatVersion "1" receipts are validated fail-closed: a receipt that
+  // violates a wire-format MUST is rejected even if its signature is valid.
+  // Legacy receipts (no formatVersion) keep the lenient behavior.
+  if (receipt.formatVersion !== undefined) {
+    if (receipt.formatVersion !== "1") {
+      return jsonResponse(
+        { error: `Unsupported formatVersion: ${receipt.formatVersion}` },
+        400
+      );
+    }
+    const hex64 = /^[0-9a-f]{64}$/;
+    if (!hex64.test(receipt.taskHash) || !hex64.test(receipt.resultHash ?? "")) {
+      return jsonResponse(
+        {
+          error:
+            "formatVersion 1 requires taskHash/resultHash to be 64 lowercase hex chars (full SHA-256)",
+        },
+        400
+      );
+    }
+    if (receipt.success === true && receipt.failureType !== "") {
+      return jsonResponse(
+        { error: 'failureType must be "" when success is true' },
+        400
+      );
+    }
+    if (receipt.success === false && !receipt.failureType) {
+      return jsonResponse(
+        { error: "failureType is required when success is false" },
+        400
+      );
+    }
+  }
+
   // Rate limit
   const allowed = await checkRateLimit(env.DB, receipt.agentDid);
   if (!allowed) {
@@ -686,8 +725,8 @@ async function handlePostReceipts(
       (agent_did, tool_name, task_hash, result_hash, success, latency_ms,
        failure_type, timestamp, signature, caller_did, caller_signature,
        public_key, tool_metadata_json, tool_class, verifiability_hint,
-       settlement_layer)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       settlement_layer, format_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       receipt.agentDid,
@@ -706,7 +745,9 @@ async function handlePostReceipts(
       toolMetadataJson,
       stringOrNull(xaipMetadata?.class),
       stringOrNull(xaipMetadata?.verifiabilityHint),
-      stringOrNull(xaipMetadata?.settlementLayer)
+      stringOrNull(xaipMetadata?.settlementLayer),
+      // NULL for legacy receipts; "1" for versioned ones (audit / re-verification)
+      receipt.formatVersion ?? null
     )
     .run();
 

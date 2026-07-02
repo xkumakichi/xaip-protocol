@@ -89,9 +89,14 @@ export function receiptPayload(
     timestamp: r.timestamp,
     toolName: r.toolName,
   };
-  if (r.toolMetadata !== undefined) {
-    obj.toolMetadata = r.toolMetadata;
+  if (r.formatVersion !== undefined) {
+    obj.formatVersion = r.formatVersion;
   }
+  // toolMetadata is deliberately EXCLUDED from the canonical payload: it is
+  // unsigned, deployment-defined hint data (draft §3.1 / §6). Consumers that
+  // want to trust it must validate it out of band. Pre-formatVersion SDK
+  // releases incorrectly signed it when present; formatVersion "1" receipts
+  // never include it in the signed bytes.
   return canonicalize(obj);
 }
 
@@ -140,8 +145,27 @@ export function createSigningDelegate(
   };
 }
 
-/** SHA-256 hash, truncated to 16 hex chars. */
+/**
+ * SHA-256 hash of a task input / result — full 64 lowercase hex chars.
+ *
+ * Preimage profile (pinned; draft -03 RECOMMENDED):
+ *   - string values hash their raw UTF-8 bytes
+ *   - null / undefined / absent values hash the empty string
+ *     (empty-input sentinel: e3b0c442...)
+ *   - all other JSON values hash the UTF-8 bytes of their JCS canonical
+ *     form, so key order cannot change the hash
+ *
+ * NOTE: pre-formatVersion (legacy) SDK releases truncated this digest to
+ * 16 hex chars. A 64-bit digest is collision-findable (~2^32 work) and is
+ * never produced for formatVersion "1" receipts. Legacy receipts already
+ * stored remain readable; their hashes are simply legacy-format.
+ */
 export function hash(value: unknown): string {
-  const str = typeof value === "string" ? value : JSON.stringify(value ?? "");
-  return crypto.createHash("sha256").update(str).digest("hex").slice(0, 16);
+  const str =
+    value === undefined || value === null
+      ? ""
+      : typeof value === "string"
+        ? value
+        : canonicalize(value);
+  return crypto.createHash("sha256").update(str).digest("hex");
 }

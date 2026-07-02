@@ -382,6 +382,35 @@ export function createAggregatorServer(
             });
           }
 
+          // formatVersion "1" receipts are validated fail-closed: a receipt
+          // that violates a wire-format MUST is rejected even if its
+          // signature is valid. Legacy receipts (no formatVersion) keep the
+          // lenient pre-versioning behavior.
+          if (receipt.formatVersion !== undefined) {
+            if (receipt.formatVersion !== "1") {
+              return jsonResponse(res, 422, {
+                error: `Unsupported formatVersion: ${receipt.formatVersion}`,
+              });
+            }
+            const hex64 = /^[0-9a-f]{64}$/;
+            if (!hex64.test(receipt.taskHash) || !hex64.test(receipt.resultHash ?? "")) {
+              return jsonResponse(res, 422, {
+                error:
+                  "formatVersion 1 requires taskHash/resultHash to be 64 lowercase hex chars (full SHA-256)",
+              });
+            }
+            if (receipt.success === true && receipt.failureType !== "") {
+              return jsonResponse(res, 422, {
+                error: 'failureType must be "" when success is true',
+              });
+            }
+            if (receipt.success === false && !receipt.failureType) {
+              return jsonResponse(res, 422, {
+                error: "failureType is required when success is false",
+              });
+            }
+          }
+
           // Signature verification — reject before touching the DB
           let canonical: string;
           try {
