@@ -10,69 +10,15 @@
  * Run:       npx xaip-mcp-trust
  */
 
-import * as crypto from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { KeyPair, generateKeyPair, buildReport } from "./receipt.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TRUST_API  = "https://xaip-trust-api.kuma-github.workers.dev";
 const AGGREGATOR = "https://xaip-aggregator.kuma-github.workers.dev";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface KeyPair {
-  did: string;
-  publicKey: string;   // hex-encoded SPKI DER
-  privateKey: string;  // hex-encoded PKCS8 DER
-}
-
-// ─── Crypto helpers (mirrored from demo/dogfood.ts) ──────────────────────────
-
-function generateKeyPair(didBase: string): KeyPair {
-  const pair = crypto.generateKeyPairSync("ed25519");
-  const pubDer  = pair.publicKey.export({ type: "spki",  format: "der" }) as Buffer;
-  const privDer = pair.privateKey.export({ type: "pkcs8", format: "der" }) as Buffer;
-  const raw = pubDer.subarray(pubDer.length - 32);
-  return {
-    did: `${didBase}:${raw.toString("hex")}`,
-    publicKey:  pubDer.toString("hex"),
-    privateKey: privDer.toString("hex"),
-  };
-}
-
-function canonicalize(value: unknown): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (typeof value === "number") {
-    if (!isFinite(value)) throw new Error("JCS: non-finite number");
-    return JSON.stringify(value);
-  }
-  if (typeof value === "string") return JSON.stringify(value);
-  if (Array.isArray(value)) return "[" + value.map(canonicalize).join(",") + "]";
-  const keys = Object.keys(value as Record<string, unknown>).sort();
-  return (
-    "{" +
-    keys
-      .map(k => JSON.stringify(k) + ":" + canonicalize((value as Record<string, unknown>)[k]))
-      .join(",") +
-    "}"
-  );
-}
-
-function signPayload(payload: string, privateKeyHex: string): string {
-  const key = crypto.createPrivateKey({
-    key: Buffer.from(privateKeyHex, "hex"),
-    format: "der",
-    type: "pkcs8",
-  });
-  return crypto.sign(null, Buffer.from(payload), key).toString("hex");
-}
-
-function sha256short(value: string): string {
-  return crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
-}
 
 // ─── Session-scoped key store (in-memory, fresh each session) ─────────────────
 //
@@ -305,41 +251,17 @@ server.tool(
     tool:      z.string().describe("Name of the tool that was called"),
     success:   z.boolean().describe("Whether the tool call succeeded"),
     latencyMs: z.number().int().nonnegative().describe("Execution latency in milliseconds"),
+    result:    z.string().optional()
+                 .describe("Raw tool output (or failure description) to commit to in resultHash. Omit to commit to no output (empty-input sentinel)."),
   },
-  async ({ server: serverSlug, tool, success, latencyMs }) => {
+  async ({ server: serverSlug, tool, success, latencyMs, result }) => {
     const agentKp  = getAgentKey(serverSlug);
     const callerKp = getCallerKey();
 
-    const timestamp  = new Date().toISOString();
-    const taskHash   = sha256short(tool);
-    const resultHash = sha256short(success ? "ok" : "failed");
-
-    const base = {
-      agentDid:    agentKp.did,
-      callerDid:   callerKp.did,
-      toolName:    tool,
-      taskHash,
-      resultHash,
-      success,
-      latencyMs,
-      timestamp,
-    };
-
-    // Canonical payload for signing (must include failureType: "" per aggregator spec)
-    const payloadObj = {
-      agentDid:    base.agentDid,
-      callerDid:   base.callerDid,
-      failureType: "",
-      latencyMs:   base.latencyMs,
-      resultHash:  base.resultHash,
-      success:     base.success,
-      taskHash:    base.taskHash,
-      timestamp:   base.timestamp,
-      toolName:    base.toolName,
-    };
-    const payload         = canonicalize(payloadObj);
-    const signature       = signPayload(payload, agentKp.privateKey);
-    const callerSignature = signPayload(payload, callerKp.privateKey);
+    const { base, signature, callerSignature } = buildReport({
+      agentKp, callerKp, tool, success, latencyMs, result,
+    });
+    const timestamp = base.timestamp as string;
 
     let responseText: string;
     try {

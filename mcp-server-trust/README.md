@@ -50,16 +50,19 @@ Returns: selected server, reason, rejected list with reasons, per-candidate scor
 ---
 
 ### `xaip_report`
-Report the result of an MCP tool execution. Each report is Ed25519-signed and submitted to the XAIP Aggregator, contributing to the server's trust score.
+Report the result of an MCP tool execution. Each report is a wire format v1 receipt (`formatVersion: "1"`, full 64-char SHA-256 hashes), Ed25519-signed and submitted to the XAIP Aggregator, contributing to the server's trust score.
 
 ```
 xaip_report({
   server: "context7",
   tool: "query-docs",
   success: true,
-  latencyMs: 420
+  latencyMs: 420,
+  result: "..."   // optional: raw output (or failure description) to commit to
 })
 ```
+
+`resultHash` commits to `result` when provided. When omitted, the receipt commits to no output: `resultHash` is the empty-input sentinel (`e3b0c442…`), per the spec's preimage profile.
 
 Returns: confirmation of receipt submission with agent/caller DIDs and timestamp. Keys are generated fresh each session (not persisted), improving caller diversity.
 
