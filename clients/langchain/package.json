@@ -1,6 +1,6 @@
 {
   "name": "xaip-langchain",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "XAIP callback handler for LangChain.js — emits signed XAIP receipts for every tool call. Provider-agnostic trust layer, drop-in.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",

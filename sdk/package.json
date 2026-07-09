@@ -1,6 +1,6 @@
 {
   "name": "xaip-sdk",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Chain-agnostic trust protocol for AI agents. Register, Attest, Query, Settle.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

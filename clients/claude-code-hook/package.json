@@ -1,6 +1,6 @@
 {
   "name": "xaip-claude-hook",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Claude Code hook that warns before low-trust MCP calls and emits signed XAIP receipts — turns your normal MCP usage into live trust data.",
   "bin": {
     "xaip-claude-hook": "./bin/xaip-init.js",
