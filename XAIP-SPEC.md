@@ -317,7 +317,7 @@ GET /health → { "status": "ok", "node": "aggregator-id", "timestamp": "..." }
    - `threshold = max(3 × MAD, 0.1)`
    - Nodes where `|trust − med| > threshold` are **outliers** — excluded from quorum, penalized.
    - Remaining nodes form the quorum; select the one closest to the quorum median.
-7. Set `source` to `quorum(quorumSize/totalConfigured)`.
+7. Set `source` to a provenance string naming the responding node. Quorum/federation wording MUST appear only when more than one node actually participated; a single-node deployment describes itself as a single aggregator.
 8. Add `quorum_degraded` to `riskFlags` when `quorumSize < 3`.
 9. Include `outlierNodes: string[]` in the response when outliers were detected.
 

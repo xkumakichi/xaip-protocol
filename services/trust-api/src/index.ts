@@ -207,10 +207,18 @@ function toTrustResponse(
     verdict,
     receipts: r.meta.sampleSize,
     confidence,
-    source: `${res.source} (quorum:${quorumSize})`,
+    // Describe provenance honestly: quorum/federation wording is reserved for
+    // actual multi-node deployments. The public deployment is a single node.
+    source:
+      quorumSize > 1
+        ? `${res.source} (quorum:${quorumSize})`
+        : `${res.source} (single aggregator)`,
     riskFlags: r.riskFlags,
     timestamp: new Date().toISOString(),
-    computedFrom: `${r.meta.sampleSize} receipts via XAIP Aggregator BFT (${quorumSize} nodes)`,
+    computedFrom:
+      quorumSize > 1
+        ? `${r.meta.sampleSize} receipts via XAIP Aggregator federation (${quorumSize} nodes)`
+        : `${r.meta.sampleSize} receipts via a single XAIP Aggregator node`,
     ...(r.observedToolMetadata ? { observedToolMetadata: r.observedToolMetadata } : {}),
   };
 }

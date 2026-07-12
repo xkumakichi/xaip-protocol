@@ -97,14 +97,24 @@ function signPayload(payload: string, privateKeyHex: string): string {
   return crypto.sign(null, Buffer.from(payload), key).toString("hex");
 }
 
-function sha256short(value: string): string {
-  return crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
+// Wire format v1 preimage profile (draft -03 §3.5): strings hash their raw
+// UTF-8 bytes, absent/null hashes the empty string (empty-input sentinel),
+// structured values hash their JCS form. Full 64-char digest.
+function hash(value: unknown): string {
+  const str =
+    value === undefined || value === null
+      ? ""
+      : typeof value === "string"
+        ? value
+        : canonicalize(value);
+  return crypto.createHash("sha256").update(str).digest("hex");
 }
 
 function buildPayload(r: {
   agentDid: string;
   callerDid: string;
-  failureType?: string;
+  failureType: string;
+  formatVersion: string;
   latencyMs: number;
   resultHash: string;
   success: boolean;
@@ -115,7 +125,8 @@ function buildPayload(r: {
   return canonicalize({
     agentDid: r.agentDid,
     callerDid: r.callerDid,
-    failureType: r.failureType ?? "",
+    failureType: r.failureType,
+    formatVersion: r.formatVersion,
     latencyMs: r.latencyMs,
     resultHash: r.resultHash,
     success: r.success,
@@ -168,8 +179,10 @@ async function postReceipt(params: {
   failureType?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const timestamp = new Date().toISOString();
-  const taskHash = sha256short(JSON.stringify(params.taskInput));
-  const resultHash = sha256short(JSON.stringify(params.result));
+  const taskHash = hash(params.taskInput);
+  const resultHash = hash(params.result);
+  // v1: failureType is always present on the wire — "" on success
+  const failureType = params.success ? "" : (params.failureType ?? "error");
 
   const base = {
     agentDid: params.agentKp.did,
@@ -179,14 +192,16 @@ async function postReceipt(params: {
     resultHash,
     success: params.success,
     latencyMs: params.latencyMs,
-    failureType: params.failureType,
+    failureType,
     timestamp,
+    formatVersion: "1",
   };
 
   const payload = buildPayload({
     agentDid: base.agentDid,
     callerDid: base.callerDid,
     failureType: base.failureType,
+    formatVersion: base.formatVersion,
     latencyMs: base.latencyMs,
     resultHash: base.resultHash,
     success: base.success,
