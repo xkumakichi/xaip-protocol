@@ -82,7 +82,98 @@ XAIP helps agents prefer candidates with stronger available execution evidence, 
 
 Every execution receipt is Ed25519-signed and verified. Trust scores are computed using a Bayesian model with caller diversity weighting — not self-reported metrics.
 
-## Quick Start
+## Quick Start — your first signed receipt in under 5 minutes
+
+The fastest path is the Claude Code hook: your normal MCP tool calls start
+producing signed receipts, with nothing but hashes leaving your machine.
+Measured end-to-end on a clean Windows 11 profile (Node 24, npm 11) — total
+command time was about 8 seconds; the steps are identical on macOS/Linux.
+
+### 1. Install
+
+```bash
+npm install -g xaip-claude-hook
+```
+
+### 2. One command
+
+```bash
+xaip-claude-hook install
+```
+
+```
+✓ XAIP Claude Code hook installed.
+  C:\Users\you\.claude\settings.json
+
+Next MCP tool call will emit a signed receipt to
+  https://xaip-aggregator.kuma-github.workers.dev
+```
+
+### 3. One tool call
+
+Open a **new** Claude Code session and let it call any MCP tool (for example,
+ask it to look up a library with context7). The hook signs and submits a
+receipt automatically — you do nothing.
+
+### 4. One signed receipt
+
+```bash
+cat ~/.xaip/hook.log
+```
+
+```
+2026-07-17T03:41:57.964Z POST context7/resolve-library-id ok=true lat=2402ms → 200 {"ok":true,"agentDid":"did:web:context7","callerVerified":true}
+```
+
+`callerVerified: true` is the aggregator confirming your Ed25519 caller
+signature over the canonical receipt payload. Only hashes and metadata (tool
+name, latency, success) were sent — never inputs, outputs, or file paths, and
+the log shows exactly what left the machine.
+
+### 5. One verification result
+
+```bash
+curl https://xaip-trust-api.kuma-github.workers.dev/v1/trust/context7
+```
+
+```json
+{ "slug": "context7", "trust": 0.926, "receipts": 1044,
+  "source": "xaip-aggregator-1 (single aggregator)" }
+```
+
+### 6. One precheck result — no invented trust
+
+```bash
+curl -X POST https://xaip-trust-api.kuma-github.workers.dev/v1/select \
+  -H "Content-Type: application/json" \
+  -d '{"task":"summarize a webpage","candidates":["context7","my-brand-new-server"]}'
+```
+
+```json
+{ "selected": "context7",
+  "reason": "Only eligible candidate (trust 0.926, 1044 verified executions)",
+  "rejected": [ { "slug": "my-brand-new-server",
+                  "reason": "unscored — no execution evidence available" } ] }
+```
+
+This is the cold-start behavior, shown honestly: a server nobody has executed
+is `unscored`, not given a synthetic score. Evidence accumulates as receipts
+arrive; XAIP does not fabricate trust for tools without execution history.
+
+### If something doesn't work
+
+- **Hook never fires** — the hook command must be resolvable when Claude Code
+  spawns it: check that your npm global bin directory (`npm config get prefix`)
+  is on `PATH`, then start a fresh session.
+- **PowerShell says "running scripts is disabled"** — Windows' default
+  execution policy blocks npm's `.ps1` shims for interactive commands. Use
+  `xaip-claude-hook.cmd`, run it from `cmd`, or
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Receipt emission is
+  unaffected (the hook runs via the `.cmd` shim).
+- **Turn it off** — `export XAIP_DISABLED=1` disables temporarily;
+  `xaip-claude-hook uninstall` removes the hook (keys/logs under `~/.xaip/`
+  stay until you delete them). Receipts are pseudonymous: your caller DID is a
+  per-install key, linked to nothing else.
 
 ### Run the end-to-end demo
 
