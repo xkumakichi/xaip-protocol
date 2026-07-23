@@ -41,6 +41,14 @@ forming first.
 - Before Payment Evidence (seeded demo): https://xkumakichi.github.io/xaip-protocol/before-payment-demo.html
 - Browser playground: https://xkumakichi.github.io/xaip-protocol/playground.html
 
+## Quick start
+
+- Fastest path to a first signed receipt (~5 minutes, measured): install the
+  Claude Code hook (`npm install -g xaip-claude-hook && xaip-claude-hook install`);
+  every MCP tool call in a normal session then emits a co-signed wire format v1
+  receipt (hash-only). Steps with real outputs:
+  https://github.com/xkumakichi/xaip-protocol#quick-start--your-first-signed-receipt-in-under-5-minutes
+
 ## Spec and implementation
 
 - IETF Internet-Draft (individual submission, no formal IETF standing): https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/

@@ -6,6 +6,16 @@ XAIP is a provider-neutral signed execution evidence layer for AI agent tool cal
 
 Receipts are the primary artifact. Trust scores are one derived view over those receipts — not a claim of absolute safety or correctness.
 
+### XAIP in 30 seconds
+
+- **Mechanism** — one tool call in, one receipt out. The executing agent and the caller sign the *same* canonical record (Ed25519 over JCS), so neither side can unilaterally fabricate or repudiate it. Only hashes of input/output are carried; content never leaves your machine.
+- **What you get on day one** — a verifiable history of what your own agent's tools actually did, queryable *before* the next delegation (`precheck()`). Useful single-player; no network of other users required.
+- **What XAIP is not** — not a sandbox, not an approval engine, not a payment rail, not a safety guarantee. It makes execution evidence visible; you decide what to trust.
+
+**Pick your depth:**
+[**3 minutes** — produce your first signed receipt](#quick-start--your-first-signed-receipt-in-under-5-minutes) ·
+[**10 minutes** — verify the format yourself](#internet-draft): run the [executable conformance vectors](./docs/spec/test-vectors/) (`node check.mjs`, no dependencies), then skim the [Internet-Draft](https://datatracker.ietf.org/doc/draft-xkumakichi-xaip-receipts/) it pins.
+
 [![Trust Evidence Before Delegation — XAIP demo](./docs/evidence-before-delegation.gif)](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)
 
 *Live demo: three candidate servers, side-by-side comparison without and with XAIP. [Open in browser →](https://xkumakichi.github.io/xaip-protocol/evidence-before-delegation.html)*
