@@ -1,0 +1,46 @@
+name: hook-smoke
+
+# Hermetic install-and-fire smoke for xaip-claude-hook on all three OSes.
+# Packs the hook from source, installs it globally the way a user would,
+# replays real Claude Code hook events against a local mock aggregator, and
+# asserts the emitted receipt conforms to wire format v1 (including both
+# Ed25519 signatures). No production traffic.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clients/claude-code-hook/**"
+      - ".github/workflows/hook-smoke.yml"
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Pack and install globally (user path)
+        shell: bash
+        run: |
+          cd clients/claude-code-hook
+          npm pack
+          npm install -g ./xaip-claude-hook-*.tgz
+      - name: Register hook
+        shell: bash
+        run: |
+          xaip-claude-hook install
+          xaip-claude-hook status
+      - name: Fire replayed tool-call events against mock aggregator
+        shell: bash
+        run: node clients/claude-code-hook/test/ci-smoke.mjs
+      - name: Show hook log
+        if: always()
+        shell: bash
+        run: cat ~/.xaip/hook.log || true
