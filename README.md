@@ -99,6 +99,10 @@ producing signed receipts, with nothing but hashes leaving your machine.
 Measured end-to-end on a clean Windows 11 profile (Node 24, npm 11) — total
 command time was about 8 seconds; the steps are identical on macOS/Linux.
 
+![Quick start replay — install, one tool call, one signed receipt, verification, precheck](./docs/quickstart.gif)
+
+*(Terminal replay rendered from the real captured outputs of that measurement — [generator script](./docs/media/make-quickstart-gif.py).)*
+
 ### 1. Install
 
 ```bash
